@@ -1,9 +1,17 @@
 /**
- * LuNav Academy — Arcade Video Game Progression, Currencies, High Scores & Persistence Engine
- * "Don't just learn about the Moon. Play to explore it."
+ * LuNav Academy — Arcade Video Game & Interactive Learning 2.0 Persistence Engine
+ * PLAY — DISCOVER — OPERATE
  */
 
 const STORAGE_KEY = 'lunav_academy_arcade_v2';
+
+export const XP_REWARDS = {
+  QUIZ_COMPLETE: 25,
+  QUIZ_PERFECT_BONUS: 50,
+  FIELD_MISSION: 50,
+  COMPARATIVE_EXPERIMENT: 35,
+  BASE_DESIGN_FINAL: 150,
+};
 
 export const GAME_WORLDS = [
   {
@@ -46,25 +54,25 @@ export const GAME_WORLDS = [
     id: 'physics',
     code: 'WORLD 04',
     title: 'EARTH VS MOON: PHYSICS ARENA',
-    tag: 'INTERACTIVE GRAVITY SANDBOX',
+    tag: 'SANDBOX + COMPARATIVE LAB',
     location: 'Apollo 15 Vacuum Lab',
     color: '#42E8E8',
     accent: '#FFC247',
     xpReward: 140,
     coinReward: 100,
-    shortObjective: 'Jump 6x higher, switch planets & drop hammer vs. feather!',
+    shortObjective: 'Jump 6x higher, test 5 comparative labs & drop hammer vs. feather!',
   },
   {
     id: 'builder',
     code: 'WORLD 05',
     title: 'BUILD YOUR MOON BASE',
-    tag: 'COLONY STRATEGY SANDBOX',
+    tag: 'COLONY & MISSION PROJECT',
     location: 'Artemis Base Camp Alpha',
     color: '#a855f7',
     accent: '#21D69B',
-    xpReward: 200,
+    xpReward: 150,
     coinReward: 180,
-    shortObjective: 'Construct habitats, solar towers, labs & expand your lunar colony!',
+    shortObjective: 'Place habitats, solar arrays, rovers & generate your Mission Report!',
   },
 ];
 
@@ -77,14 +85,15 @@ export const ACADEMY_RANKS = [
 ];
 
 export const ACADEMY_ACHIEVEMENTS = [
+  // Original 5 World Trophies
   {
     id: 'first-landing',
     title: 'FIRST LANDING',
     description: 'Land the Lunar Module safely on a target pad in Lunar Lander: Touchdown.',
     icon: 'Rocket',
     color: '#21D69B',
-    xpBonus: 75,
-    coinBonus: 50,
+    xpBonus: 50,
+    coinBonus: 40,
   },
   {
     id: 'crater-explorer',
@@ -92,8 +101,8 @@ export const ACADEMY_ACHIEVEMENTS = [
     description: 'Drive the Lunar Rover across craters & reach the finish beacon in Crater Run.',
     icon: 'Compass',
     color: '#25BFFF',
-    xpBonus: 75,
-    coinBonus: 50,
+    xpBonus: 50,
+    coinBonus: 40,
   },
   {
     id: 'energy-engineer',
@@ -101,8 +110,8 @@ export const ACADEMY_ACHIEVEMENTS = [
     description: 'Keep the lunar habitat powered through a solar eclipse in Power Grid.',
     icon: 'Zap',
     color: '#FFC247',
-    xpBonus: 75,
-    coinBonus: 50,
+    xpBonus: 50,
+    coinBonus: 40,
   },
   {
     id: 'gravity-master',
@@ -110,8 +119,8 @@ export const ACADEMY_ACHIEVEMENTS = [
     description: 'Test Moon jumps and the Vacuum Hammer & Feather drop in Physics Arena.',
     icon: 'Sparkles',
     color: '#42E8E8',
-    xpBonus: 75,
-    coinBonus: 50,
+    xpBonus: 50,
+    coinBonus: 40,
   },
   {
     id: 'lunar-architect',
@@ -119,17 +128,54 @@ export const ACADEMY_ACHIEVEMENTS = [
     description: 'Build a thriving self-sustaining lunar colony in Build Your Moon Base.',
     icon: 'Award',
     color: '#a855f7',
-    xpBonus: 100,
-    coinBonus: 80,
+    xpBonus: 60,
+    coinBonus: 50,
+  },
+  // New Interactive Learning 2.0 Badges
+  {
+    id: 'lunar-knowledge',
+    title: 'LUNAR KNOWLEDGE',
+    description: 'Complete a 5-question round in the Lunar Knowledge Arena.',
+    icon: 'Brain',
+    color: '#25BFFF',
+    xpBonus: 40,
+    coinBonus: 35,
   },
   {
-    id: 'arcade-champion',
-    title: 'ARCADE CHAMPION',
-    description: 'Accumulate 500+ Lunar Coins across all 5 space missions.',
+    id: 'physics-explorer',
+    title: 'PHYSICS EXPLORER',
+    description: 'Complete at least 3 interactive experiments in the Comparative Science Lab.',
+    icon: 'Scale',
+    color: '#42E8E8',
+    xpBonus: 50,
+    coinBonus: 45,
+  },
+  {
+    id: 'map-navigator',
+    title: 'MAP NAVIGATOR',
+    description: 'Complete LuNav Field Training missions using the real South Pole map & tools.',
+    icon: 'Compass',
+    color: '#21D69B',
+    xpBonus: 60,
+    coinBonus: 50,
+  },
+  {
+    id: 'solar-analyst',
+    title: 'SOLAR ANALYST',
+    description: 'Analyze polar sunlight and PSR shadows in Mission 03: Sunlight Detective.',
+    icon: 'Sun',
+    color: '#FFC247',
+    xpBonus: 45,
+    coinBonus: 40,
+  },
+  {
+    id: 'mission-planner',
+    title: 'MISSION PLANNER',
+    description: 'Complete the Moon Base Mission Project and generate your Visual Mission Report.',
     icon: 'Trophy',
-    color: '#f59e0b',
-    xpBonus: 120,
-    coinBonus: 100,
+    color: '#f43f5e',
+    xpBonus: 75,
+    coinBonus: 60,
   },
 ];
 
@@ -139,24 +185,24 @@ export const DAILY_MISSIONS = [
     title: 'ICE HUNTER',
     task: 'Collect 5 lunar ice samples in Moon Rover',
     targetGame: 'rover',
-    rewardXp: 60,
+    rewardXp: 50,
     rewardCoins: 40,
   },
   {
-    id: 'daily-touchdown',
-    title: 'SOFT TOUCHDOWN',
-    task: 'Land with < 1.8 m/s vertical speed in Lunar Lander',
-    targetGame: 'lander',
-    rewardXp: 70,
-    rewardCoins: 50,
+    id: 'daily-quiz',
+    title: 'KNOWLEDGE ARENA CHALLENGER',
+    task: 'Complete a 5-question round in Lunar Knowledge Arena',
+    targetGame: 'knowledge',
+    rewardXp: 50,
+    rewardCoins: 40,
   },
   {
-    id: 'daily-jump',
-    title: 'LOW-G ACROBAT',
-    task: 'Perform a 6x Moon Jump & Vacuum Drop in Physics Arena',
-    targetGame: 'physics',
+    id: 'daily-field',
+    title: 'LUNAV CADET OPERATOR',
+    task: 'Complete a guided mission in LuNav Field Training',
+    targetGame: 'field-training',
     rewardXp: 50,
-    rewardCoins: 35,
+    rewardCoins: 45,
   },
 ];
 
@@ -167,15 +213,20 @@ export const INITIAL_ACADEMY_STATE = {
   maxEnergy: 100,
   lastPlayedGame: 'rover',
   completedGames: {}, // { rover: true, power: true, lander: true, physics: true, builder: true }
+  completedActivities: {}, // Anti-farming tracker: { [activityKey]: true }
+  fieldMissionsDone: {}, // { m1: true, m2: true, m3: true, m4: true, m5: true }
+  comparativeLabsDone: {}, // { gravity: true, atmosphere: true, temperature: true, dayCycle: true, tilt: true }
+  quizCategoriesDone: {}, // { science: true, comparison: true, survival: true, solar: true, navigation: true }
   highScores: {
     rover: 0,
     power: 0,
     lander: 0,
     physics: 0,
     builder: 0,
+    knowledge: 0,
   },
-  unlockedBadges: [], // ['first-landing', ...]
-  claimedDaily: {}, // { 'daily-samples': true }
+  unlockedBadges: [],
+  claimedDaily: {},
 };
 
 export function loadAcademyState() {
@@ -187,6 +238,10 @@ export function loadAcademyState() {
       ...INITIAL_ACADEMY_STATE,
       ...parsed,
       completedGames: parsed.completedGames || {},
+      completedActivities: parsed.completedActivities || {},
+      fieldMissionsDone: parsed.fieldMissionsDone || {},
+      comparativeLabsDone: parsed.comparativeLabsDone || {},
+      quizCategoriesDone: parsed.quizCategoriesDone || {},
       highScores: {
         ...INITIAL_ACADEMY_STATE.highScores,
         ...(parsed.highScores || {}),
@@ -208,7 +263,6 @@ export function saveAcademyState(state) {
 }
 
 export function getPlayerLevelInfo(xp = 0) {
-  // Smooth RPG level curve: every 200 XP is a player level, plus rank titles
   const numericLevel = Math.floor(xp / 200) + 1;
   const xpIntoLevel = xp % 200;
   const levelProgressPct = Math.min(100, Math.round((xpIntoLevel / 200) * 100));

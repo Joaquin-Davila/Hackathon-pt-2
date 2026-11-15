@@ -10,6 +10,9 @@ import {
   Compass,
   CheckCircle2,
   RotateCcw,
+  Brain,
+  Scale,
+  Hammer,
 } from 'lucide-react';
 import {
   GAME_WORLDS,
@@ -25,6 +28,8 @@ import PowerGridGame from '../components/academy/games/PowerGridGame.jsx';
 import LunarLanderGame from '../components/academy/games/LunarLanderGame.jsx';
 import PhysicsArenaGame from '../components/academy/games/PhysicsArenaGame.jsx';
 import MoonBaseBuilderGame from '../components/academy/games/MoonBaseBuilderGame.jsx';
+import LunarKnowledgeArena from '../components/academy/games/LunarKnowledgeArena.jsx';
+import LuNavFieldTraining from '../components/academy/games/LuNavFieldTraining.jsx';
 import '../styles/academy.css';
 
 export default function AcademyDashboard({
@@ -33,7 +38,8 @@ export default function AcademyDashboard({
 }) {
   const [state, setState] = useState(() => loadAcademyState());
   const [selectedWorldId, setSelectedWorldId] = useState(() => state.lastPlayedGame || 'rover');
-  const [activeGameId, setActiveGameId] = useState(null); // null = Main Menu Hub | 'rover' | 'power' | 'lander' | 'physics' | 'builder'
+  // null = Main Menu Hub | 'rover' | 'power' | 'lander' | 'physics' | 'builder' | 'knowledge' | 'field-training'
+  const [activeGameId, setActiveGameId] = useState(null);
   const [rewardBanner, setRewardBanner] = useState(null);
 
   useEffect(() => {
@@ -44,45 +50,98 @@ export default function AcademyDashboard({
   const selectedWorld = GAME_WORLDS.find((w) => w.id === selectedWorldId) || GAME_WORLDS[0];
   const lastWorld = GAME_WORLDS.find((w) => w.id === state.lastPlayedGame) || GAME_WORLDS[0];
 
-  const handleLaunchGame = (worldId) => {
-    setSelectedWorldId(worldId);
-    setActiveGameId(worldId);
-    setState((prev) => ({
-      ...prev,
-      lastPlayedGame: worldId,
-      energy: Math.max(10, prev.energy - 5),
-    }));
+  const handleLaunchGame = (modeId) => {
+    if (GAME_WORLDS.some((w) => w.id === modeId)) {
+      setSelectedWorldId(modeId);
+      setState((prev) => ({
+        ...prev,
+        lastPlayedGame: modeId,
+      }));
+    }
+    setActiveGameId(modeId);
   };
 
-  // Central Game Completion & Reward Handler
-  const handleCompleteGame = useCallback(
-    ({ gameId, score = 0, xpEarned = 100, coinsEarned = 80, badgeId = null, dailyId = null }) => {
+  // Central Anti-Farming XP & Badge Engine
+  const awardProgress = useCallback(
+    ({
+      activityKey,
+      gameId = null,
+      score = 0,
+      xpEarned = 0,
+      coinsEarned = 0,
+      badgeIds = [],
+      dailyId = null,
+      fieldMissionId = null,
+      comparativeLabId = null,
+      quizCategoryId = null,
+    }) => {
       setState((prev) => {
-        const nextCompleted = { ...prev.completedGames, [gameId]: true };
-        const prevBest = prev.highScores?.[gameId] || 0;
-        const nextHighScores = {
-          ...prev.highScores,
-          [gameId]: Math.max(prevBest, score),
-        };
+        const alreadyClaimedActivity = activityKey
+          ? Boolean(prev.completedActivities?.[activityKey])
+          : false;
+
+        const nextCompletedActivities = { ...prev.completedActivities };
+        if (activityKey) {
+          nextCompletedActivities[activityKey] = true;
+        }
+
+        const nextCompletedGames = { ...prev.completedGames };
+        if (gameId) {
+          nextCompletedGames[gameId] = true;
+        }
+
+        const nextFieldMissions = { ...prev.fieldMissionsDone };
+        if (fieldMissionId) {
+          nextFieldMissions[fieldMissionId] = true;
+        }
+
+        const nextComparativeLabs = { ...prev.comparativeLabsDone };
+        if (comparativeLabId) {
+          nextComparativeLabs[comparativeLabId] = true;
+        }
+
+        const nextQuizCategories = { ...prev.quizCategoriesDone };
+        if (quizCategoryId) {
+          nextQuizCategories[quizCategoryId] = true;
+        }
+
+        const nextHighScores = { ...prev.highScores };
+        if (gameId && score > (nextHighScores[gameId] || 0)) {
+          nextHighScores[gameId] = score;
+        }
+
+        // Only award XP & Coins if this specific activity Key wasn't already farmed
+        const effectiveXp = alreadyClaimedActivity ? 0 : xpEarned;
+        const effectiveCoins = alreadyClaimedActivity ? 0 : coinsEarned;
 
         const nextBadges = [...prev.unlockedBadges];
         let bonusXp = 0;
         let bonusCoins = 0;
-        const unlockedNames = [];
+        const unlockedTitles = [];
 
-        const tryUnlock = (id) => {
-          if (id && !nextBadges.includes(id)) {
-            nextBadges.push(id);
-            const bDef = ACADEMY_ACHIEVEMENTS.find((b) => b.id === id);
+        const tryUnlockBadge = (bId) => {
+          if (bId && !nextBadges.includes(bId)) {
+            nextBadges.push(bId);
+            const bDef = ACADEMY_ACHIEVEMENTS.find((b) => b.id === bId);
             if (bDef) {
               bonusXp += bDef.xpBonus;
               bonusCoins += bDef.coinBonus;
-              unlockedNames.push(bDef.title);
+              unlockedTitles.push(bDef.title);
             }
           }
         };
 
-        tryUnlock(badgeId);
+        badgeIds.filter(Boolean).forEach(tryUnlockBadge);
+
+        // Auto-unlock Physics Explorer when 3+ Comparative Labs are completed
+        if (Object.keys(nextComparativeLabs).length >= 3) {
+          tryUnlockBadge('physics-explorer');
+        }
+
+        // Auto-unlock Map Navigator when 3+ Field Training Missions are completed
+        if (Object.keys(nextFieldMissions).length >= 3) {
+          tryUnlockBadge('map-navigator');
+        }
 
         const nextClaimedDaily = { ...prev.claimedDaily };
         if (dailyId && !nextClaimedDaily[dailyId]) {
@@ -91,30 +150,33 @@ export default function AcademyDashboard({
           if (dDef) {
             bonusXp += dDef.rewardXp;
             bonusCoins += dDef.rewardCoins;
-            unlockedNames.push(`QUEST: ${dDef.title}`);
+            unlockedTitles.push(`QUEST: ${dDef.title}`);
           }
         }
 
-        const totalNewCoins = prev.coins + coinsEarned + bonusCoins;
-        if (totalNewCoins >= 500) {
-          tryUnlock('arcade-champion');
+        const totalXpGain = effectiveXp + bonusXp;
+        const totalCoinGain = effectiveCoins + bonusCoins;
+
+        if (unlockedTitles.length > 0) {
+          setRewardBanner(
+            `🏆 BADGE UNLOCKED: ${unlockedTitles.join(' + ')}! (+${totalXpGain} XP & +${totalCoinGain} 🪙)`
+          );
+        } else if (totalXpGain > 0) {
+          setRewardBanner(`⚡ +${totalXpGain} XP & +${totalCoinGain} COINS EARNED!`);
+        } else {
+          setRewardBanner(`✓ CHALLENGE COMPLETED! (XP ALREADY CLAIMED FOR THIS MISSION)`);
         }
-
-        const totalXpGain = xpEarned + bonusXp;
-        const totalCoinGain = coinsEarned + bonusCoins;
-
-        setRewardBanner(
-          unlockedNames.length > 0
-            ? `🏆 UNLOCKED: ${unlockedNames.join(' + ')}! (+${totalXpGain} XP & +${totalCoinGain} 🪙)`
-            : `⚡ MISSION COMPLETE! +${totalXpGain} XP & +${totalCoinGain} COINS!`
-        );
 
         return {
           ...prev,
           xp: prev.xp + totalXpGain,
-          coins: totalNewCoins,
-          energy: Math.min(100, prev.energy + 15),
-          completedGames: nextCompleted,
+          coins: prev.coins + totalCoinGain,
+          energy: Math.min(100, prev.energy + 10),
+          completedGames: nextCompletedGames,
+          completedActivities: nextCompletedActivities,
+          fieldMissionsDone: nextFieldMissions,
+          comparativeLabsDone: nextComparativeLabs,
+          quizCategoriesDone: nextQuizCategories,
           highScores: nextHighScores,
           unlockedBadges: nextBadges,
           claimedDaily: nextClaimedDaily,
@@ -124,15 +186,78 @@ export default function AcademyDashboard({
     []
   );
 
+  // Handlers for each mode
+  const handleCompleteArcadeWorld = useCallback(
+    ({ gameId, score = 0, xpEarned = 120, coinsEarned = 80, badgeId = null, secondaryBadgeId = null, dailyId = null }) => {
+      awardProgress({
+        activityKey: `world-${gameId}`,
+        gameId,
+        score,
+        xpEarned,
+        coinsEarned,
+        badgeIds: [badgeId, secondaryBadgeId],
+        dailyId,
+      });
+    },
+    [awardProgress]
+  );
+
+  const handleCompleteQuizRound = useCallback(
+    ({ categoryId, score, isPerfect, xpEarned, coinsEarned }) => {
+      const key = isPerfect ? `quiz-${categoryId}-perfect` : `quiz-${categoryId}`;
+      awardProgress({
+        activityKey: key,
+        gameId: 'knowledge',
+        score,
+        xpEarned,
+        coinsEarned,
+        badgeIds: ['lunar-knowledge'],
+        dailyId: 'daily-quiz',
+        quizCategoryId: categoryId,
+      });
+    },
+    [awardProgress]
+  );
+
+  const handleCompleteFieldMission = useCallback(
+    ({ missionId, xpEarned, coinsEarned, badgeId }) => {
+      awardProgress({
+        activityKey: `field-${missionId}`,
+        xpEarned,
+        coinsEarned,
+        badgeIds: [badgeId],
+        dailyId: 'daily-field',
+        fieldMissionId: missionId,
+      });
+    },
+    [awardProgress]
+  );
+
+  const handleCompleteComparativeLab = useCallback(
+    ({ labId, xpEarned, coinsEarned }) => {
+      awardProgress({
+        activityKey: `complab-${labId}`,
+        xpEarned,
+        coinsEarned,
+        comparativeLabId: labId,
+      });
+    },
+    [awardProgress]
+  );
+
   const handleResetSave = () => {
     setState(INITIAL_ACADEMY_STATE);
     saveAcademyState(INITIAL_ACADEMY_STATE);
     setRewardBanner('GAME SAVE RESET — READY FOR A NEW ADVENTURE!');
   };
 
+  const fieldCount = Object.keys(state.fieldMissionsDone || {}).length;
+  const quizCount = Object.keys(state.quizCategoriesDone || {}).length;
+  const labCount = Object.keys(state.comparativeLabsDone || {}).length;
+
   return (
     <div className="lunav-arcade-shell">
-      {/* 1. TOP ARCADE HUD BAR (Level, XP Bar, Coins, Energy, Pro Mode Switch) */}
+      {/* 1. TOP ARCADE HUD BAR */}
       <header className="arcade-top-hud">
         <div className="ath-left">
           <button
@@ -141,10 +266,9 @@ export default function AcademyDashboard({
             onClick={() => (activeGameId ? setActiveGameId(null) : onReturnLanding?.())}
           >
             <ArrowLeft size={15} />
-            <span>{activeGameId ? 'GAME MENU' : 'EXIT'}</span>
+            <span>{activeGameId ? 'ACADEMY HUB' : 'EXIT'}</span>
           </button>
 
-          {/* Player Level & Animated XP Progress Bar */}
           <div className="ath-player-badge">
             <div className="ath-lvl-circle" style={{ borderColor: levelInfo.currentRank.badgeColor }}>
               <span>LVL</span>
@@ -158,49 +282,38 @@ export default function AcademyDashboard({
                 <span>{state.xp} XP</span>
               </div>
               <div className="ath-xp-track">
-                <div
-                  className="ath-xp-fill"
-                  style={{ width: `${levelInfo.levelProgressPct}%` }}
-                />
+                <div className="ath-xp-fill" style={{ width: `${levelInfo.levelProgressPct}%` }} />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Center Currencies: Coins, Energy & Badges */}
         <div className="ath-currencies">
-          <div className="currency-pill is-coins" title="Lunar Coins">
-            <span className="curr-emoji">🪙</span>
+          <div className="currency-pill is-coins">
+            <span>🪙</span>
             <strong>{state.coins}</strong>
             <small>COINS</small>
           </div>
-
-          <div className="currency-pill is-energy" title="Suit Energy">
-            <span className="curr-emoji">⚡</span>
+          <div className="currency-pill is-energy">
+            <span>⚡</span>
             <strong>{state.energy}/100</strong>
             <small>ENERGY</small>
           </div>
-
-          <div className="currency-pill is-badges" title="Unlocked Badges">
-            <span className="curr-emoji">🏅</span>
+          <div className="currency-pill is-badges">
+            <span>🏅</span>
             <strong>{state.unlockedBadges.length}/{ACADEMY_ACHIEVEMENTS.length}</strong>
             <small>BADGES</small>
           </div>
         </div>
 
         <div className="ath-right">
-          <button
-            type="button"
-            className="ath-pro-btn"
-            onClick={() => onEnterMissionControl?.()}
-          >
+          <button type="button" className="ath-pro-btn" onClick={() => onEnterMissionControl?.()}>
             <Rocket size={14} />
             <span>PRO TELEMETRY HUD →</span>
           </button>
         </div>
       </header>
 
-      {/* Floating Reward Notification Toast */}
       {rewardBanner && (
         <div className="arcade-reward-toast" role="status">
           <Sparkles size={16} />
@@ -209,13 +322,12 @@ export default function AcademyDashboard({
         </div>
       )}
 
-      {/* 2. MAIN VIEW: VIDEO GAME MAIN MENU HUB OR ACTIVE PLAYABLE GAME */}
+      {/* 2. MAIN VIEW: HUB OR ACTIVE EXPERIENCE */}
       {activeGameId === null ? (
         <div className="arcade-main-menu-grid">
-          {/* LEFT / CENTER: ILLUSTRATED LUNAR STAGE WITH ASTRONAUT & ROVER + BIG PLAY BUTTONS */}
+          {/* HERO STAGE WITH ASTRONAUT & ROVER PROTAGONISTS */}
           <section className="arcade-hero-stage" aria-label="Lunar Game Stage">
-            {/* Illustrated Animated SVG Lunar Scene with Astronaut & Rover Protagonists */}
-            <svg viewBox="0 0 860 320" className="hero-lunar-illustration" aria-hidden="true">
+            <svg viewBox="0 0 860 300" className="hero-lunar-illustration" aria-hidden="true">
               <defs>
                 <linearGradient id="spaceBg" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#090D16" />
@@ -228,10 +340,7 @@ export default function AcademyDashboard({
                   <stop offset="100%" stopColor="#1d4ed8" />
                 </radialGradient>
               </defs>
-
-              <rect width="860" height="320" fill="url(#spaceBg)" />
-
-              {/* Twinkling Stars */}
+              <rect width="860" height="300" fill="url(#spaceBg)" />
               <g fill="#ffffff" opacity="0.8">
                 <circle cx="70" cy="45" r="1.5" />
                 <circle cx="165" cy="80" r="2" />
@@ -239,55 +348,36 @@ export default function AcademyDashboard({
                 <circle cx="440" cy="60" r="2.2" />
                 <circle cx="580" cy="40" r="1.5" />
                 <circle cx="790" cy="70" r="2" />
-                <circle cx="660" cy="95" r="1.4" />
               </g>
+              <circle cx="715" cy="72" r="32" fill="url(#earthGlow)" />
+              <path d="M 0 225 L 120 165 L 235 210 L 380 145 L 520 205 L 680 155 L 860 215 L 860 300 L 0 300 Z" fill="#172234" />
+              <path d="M 0 235 Q 240 200 470 232 T 860 220 L 860 300 L 0 300 Z" fill="#1e293b" stroke="#25BFFF" strokeWidth="2.5" />
 
-              {/* Glowing Blue Earth in Sky */}
-              <circle cx="715" cy="78" r="34" fill="url(#earthGlow)" />
-              <circle cx="715" cy="78" r="42" fill="none" stroke="#42E8E8" strokeOpacity="0.3" strokeWidth="2" />
-
-              {/* Distant Lunar Crater Mountains */}
-              <path d="M 0 235 L 120 175 L 235 220 L 380 155 L 520 215 L 680 165 L 860 225 L 860 320 L 0 320 Z" fill="#172234" />
-
-              {/* Foreground Illustrated Lunar Surface & Crater Rim */}
-              <path d="M 0 245 Q 240 210 470 242 T 860 230 L 860 320 L 0 320 Z" fill="#1e293b" stroke="#25BFFF" strokeWidth="2.5" />
-              <ellipse cx="640" cy="275" rx="95" ry="22" fill="#0f172a" stroke="#42E8E8" strokeWidth="2" />
-
-              {/* Animated Lunar Rover Protagonist (Center-Right) */}
-              <g transform="translate(475, 212)" className="hero-rover-float">
-                {/* Headlight cone */}
+              {/* Animated Rover */}
+              <g transform="translate(475, 202)" className="hero-rover-float">
                 <polygon points="48,-4 170,-28 170,24" fill="#42E8E8" opacity="0.22" />
-                {/* Rover Body */}
                 <rect x="-42" y="-20" width="88" height="30" rx="8" fill="#f8fafc" stroke="#25BFFF" strokeWidth="3" />
-                {/* Canopy */}
                 <path d="M -8 -20 A 20 18 0 0 1 32 -20 Z" fill="#42E8E8" />
-                {/* Solar Mast */}
                 <line x1="-24" y1="-20" x2="-24" y2="-42" stroke="#cbd5e1" strokeWidth="3" />
                 <rect x="-42" y="-48" width="36" height="8" rx="2" fill="#FFC247" />
-                {/* Wheels */}
                 <circle cx="-26" cy="16" r="13" fill="#0f172a" stroke="#FFC247" strokeWidth="3.5" />
                 <circle cx="2" cy="16" r="13" fill="#0f172a" stroke="#FFC247" strokeWidth="3.5" />
                 <circle cx="30" cy="16" r="13" fill="#0f172a" stroke="#FFC247" strokeWidth="3.5" />
               </g>
 
-              {/* Animated Astronaut Protagonist (Center-Left) */}
-              <g transform="translate(295, 198)" className="hero-astronaut-bounce">
-                {/* Jetpack */}
+              {/* Animated Astronaut */}
+              <g transform="translate(295, 188)" className="hero-astronaut-bounce">
                 <rect x="-24" y="-14" width="12" height="34" rx="4" fill="#94a3b8" />
-                {/* Suit Torso & Legs */}
                 <rect x="-16" y="-16" width="32" height="38" rx="9" fill="#ffffff" stroke="#25BFFF" strokeWidth="3" />
                 <rect x="-13" y="20" width="10" height="18" rx="4" fill="#ffffff" stroke="#25BFFF" strokeWidth="2.5" />
                 <rect x="3" y="20" width="10" height="18" rx="4" fill="#ffffff" stroke="#25BFFF" strokeWidth="2.5" />
-                {/* Helmet & Golden Visor */}
                 <circle cx="0" cy="-32" r="20" fill="#ffffff" stroke="#25BFFF" strokeWidth="3" />
                 <rect x="-13" y="-40" width="26" height="15" rx="6" fill="#FFC247" />
-                {/* Flag Beacon */}
                 <line x1="28" y1="-48" x2="28" y2="36" stroke="#21D69B" strokeWidth="3" />
                 <polygon points="28,-48 68,-38 28,-26" fill="#21D69B" />
               </g>
             </svg>
 
-            {/* Hero Overlay: Selected World Title & Big PLAY / CONTINUE MISSION Buttons */}
             <div className="hero-stage-overlay">
               <div className="hso-selected-badge">
                 <span className="hso-code">{selectedWorld.code} // {selectedWorld.location.toUpperCase()}</span>
@@ -320,10 +410,10 @@ export default function AcademyDashboard({
             </div>
           </section>
 
-          {/* 3. VISUAL WORLD / LUNAR REGION SELECTOR (5 Playable Arcade Worlds) */}
+          {/* 3. PRIMARY PLAY ZONE: THE FIVE LUNAR WORLDS */}
           <section className="worlds-selector-section" aria-label="Select Lunar World">
             <div className="wss-header">
-              <h2>SELECT LUNAR MISSION WORLD</h2>
+              <h2>PLAY // SELECT LUNAR MISSION WORLD</h2>
               <span>{Object.keys(state.completedGames).length} / 5 WORLDS CONQUERED</span>
             </div>
 
@@ -374,9 +464,94 @@ export default function AcademyDashboard({
             </div>
           </section>
 
-          {/* 4. BOTTOM ROW: DAILY MISSIONS & UNLOCKED BADGES SHOWCASE */}
+          {/* 4. SECONDARY COMMAND DECK: DISCOVER & LEARN | TRAIN WITH LUNAV | MISSION PROJECT */}
+          <section className="secondary-command-deck" aria-label="Discover, Train with LuNav & Mission Project">
+            {/* Group 1: DISCOVER & LEARN */}
+            <div className="scd-group-box">
+              <div className="scd-group-header">
+                <span className="scd-pill is-blue">DISCOVER &amp; LEARN</span>
+                <small>Interactive Science Labs &amp; Arcade Trivia</small>
+              </div>
+              <div className="scd-buttons-stack">
+                <button
+                  type="button"
+                  className="scd-action-card is-blue"
+                  onClick={() => handleLaunchGame('knowledge')}
+                >
+                  <Brain size={22} className="scd-icon" />
+                  <div className="scd-meta">
+                    <strong>LUNAR KNOWLEDGE ARENA</strong>
+                    <span>5 Arcade Quiz Categories · {quizCount}/5 Cleared (+25 XP/round)</span>
+                  </div>
+                  <span className="scd-go-chip">ENTER →</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="scd-action-card is-cyan"
+                  onClick={() => handleLaunchGame('physics')}
+                >
+                  <Scale size={22} className="scd-icon" />
+                  <div className="scd-meta">
+                    <strong>EARTH VS MOON LAB</strong>
+                    <span>5 Comparative Experiments · {labCount}/5 Verified (+35 XP/lab)</span>
+                  </div>
+                  <span className="scd-go-chip">EXPERIMENT →</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Group 2: TRAIN WITH LUNAV */}
+            <div className="scd-group-box">
+              <div className="scd-group-header">
+                <span className="scd-pill is-green">TRAIN WITH LUNAV</span>
+                <small>Master Real NASA South Pole Maps &amp; Tools</small>
+              </div>
+              <div className="scd-buttons-stack">
+                <button
+                  type="button"
+                  className="scd-action-card is-green is-featured"
+                  onClick={() => handleLaunchGame('field-training')}
+                >
+                  <Compass size={26} className="scd-icon" />
+                  <div className="scd-meta">
+                    <strong>LUNAV FIELD TRAINING</strong>
+                    <span>
+                      5 Guided Missions on Real LROC Polar Map, LOLA DEM &amp; Ephemeris Timeline · {fieldCount}/5 Done (+50 XP each)
+                    </span>
+                  </div>
+                  <span className="scd-go-chip">TRAIN →</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Group 3: MISSION PROJECT */}
+            <div className="scd-group-box">
+              <div className="scd-group-header">
+                <span className="scd-pill is-gold">MISSION PROJECT</span>
+                <small>Capstone Lunar Colony &amp; Readiness Report</small>
+              </div>
+              <div className="scd-buttons-stack">
+                <button
+                  type="button"
+                  className="scd-action-card is-gold is-featured"
+                  onClick={() => handleLaunchGame('builder')}
+                >
+                  <Hammer size={26} className="scd-icon" />
+                  <div className="scd-meta">
+                    <strong>BUILD YOUR MOON BASE</strong>
+                    <span>
+                      Place 6 Modules (Habitat, Solar, Comms, Lab, Rover, Storage) &amp; Generate Mission Report (+150 XP)
+                    </span>
+                  </div>
+                  <span className="scd-go-chip">BUILD →</span>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* 5. BOTTOM ROW: DAILY QUESTS & TROPHY BADGES */}
           <div className="arcade-bottom-panels">
-            {/* Daily & Special Quests */}
             <section className="arcade-quests-box">
               <div className="aqb-head">
                 <Zap size={16} className="icon-gold" />
@@ -397,7 +572,7 @@ export default function AcademyDashboard({
                         className="quest-go-btn"
                         onClick={() => handleLaunchGame(q.targetGame)}
                       >
-                        {done ? '✓ CLAIMED' : `+${q.rewardCoins} 🪙 GO`}
+                        {done ? '✓ CLAIMED' : `+${q.rewardXp} XP GO`}
                       </button>
                     </div>
                   );
@@ -405,7 +580,6 @@ export default function AcademyDashboard({
               </div>
             </section>
 
-            {/* Unlocked Achievement Badges */}
             <section className="arcade-badges-box">
               <div className="aqb-head">
                 <Award size={16} className="icon-cyan" />
@@ -427,7 +601,7 @@ export default function AcademyDashboard({
                       style={{ '--b-col': b.color }}
                       title={b.description}
                     >
-                      <Trophy size={16} style={{ color: unlocked ? b.color : '#475569' }} />
+                      <Trophy size={15} style={{ color: unlocked ? b.color : '#475569', flexShrink: 0 }} />
                       <div>
                         <strong>{b.title}</strong>
                         <small>{unlocked ? 'UNLOCKED!' : b.description}</small>
@@ -440,7 +614,7 @@ export default function AcademyDashboard({
           </div>
         </div>
       ) : (
-        /* ACTIVE GAME STAGE WITH INSTANT WORLD SWITCHER TABS */
+        /* ACTIVE EXPERIENCE STAGE WITH QUICK SWITCHER */
         <div className="active-game-stage-wrapper">
           <div className="game-quick-switcher">
             {GAME_WORLDS.map((w) => (
@@ -455,25 +629,60 @@ export default function AcademyDashboard({
                 <strong>{w.title}</strong>
               </button>
             ))}
+            <button
+              type="button"
+              className={`gqs-tab ${activeGameId === 'knowledge' ? 'is-active' : ''}`}
+              style={{ '--w-color': '#25BFFF' }}
+              onClick={() => handleLaunchGame('knowledge')}
+            >
+              <span>QUIZ:</span>
+              <strong>KNOWLEDGE ARENA</strong>
+            </button>
+            <button
+              type="button"
+              className={`gqs-tab ${activeGameId === 'field-training' ? 'is-active' : ''}`}
+              style={{ '--w-color': '#21D69B' }}
+              onClick={() => handleLaunchGame('field-training')}
+            >
+              <span>OPERATE:</span>
+              <strong>LUNAV FIELD TRAINING</strong>
+            </button>
           </div>
 
           {activeGameId === 'rover' && (
             <MoonRoverGame
               bestScore={state.highScores?.rover || 0}
-              onCompleteGame={handleCompleteGame}
+              onCompleteGame={handleCompleteArcadeWorld}
             />
           )}
           {activeGameId === 'power' && (
-            <PowerGridGame onCompleteGame={handleCompleteGame} />
+            <PowerGridGame onCompleteGame={handleCompleteArcadeWorld} />
           )}
           {activeGameId === 'lander' && (
-            <LunarLanderGame onCompleteGame={handleCompleteGame} />
+            <LunarLanderGame onCompleteGame={handleCompleteArcadeWorld} />
           )}
           {activeGameId === 'physics' && (
-            <PhysicsArenaGame onCompleteGame={handleCompleteGame} />
+            <PhysicsArenaGame
+              completedLabs={state.comparativeLabsDone}
+              onCompleteGame={handleCompleteArcadeWorld}
+              onCompleteComparativeLab={handleCompleteComparativeLab}
+            />
           )}
           {activeGameId === 'builder' && (
-            <MoonBaseBuilderGame onCompleteGame={handleCompleteGame} />
+            <MoonBaseBuilderGame onCompleteGame={handleCompleteArcadeWorld} />
+          )}
+          {activeGameId === 'knowledge' && (
+            <LunarKnowledgeArena
+              completedCategories={state.quizCategoriesDone}
+              onCompleteQuizRound={handleCompleteQuizRound}
+            />
+          )}
+          {activeGameId === 'field-training' && (
+            <LuNavFieldTraining
+              completedMissions={state.fieldMissionsDone}
+              onCompleteFieldMission={handleCompleteFieldMission}
+              onOpenFullExplorer={() => onEnterMissionControl?.()}
+            />
           )}
         </div>
       )}

@@ -1323,12 +1323,738 @@
 .icon-cyan { color: #42E8E8; }
 .icon-red { color: #f43f5e; }
 
+/* ==========================================================================
+   6. SECONDARY COMMAND DECK (DISCOVER & LEARN | TRAIN WITH LUNAV | MISSION PROJECT)
+   ========================================================================== */
+.secondary-command-deck {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr 1fr;
+  gap: 14px;
+}
+
+.scd-group-box {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: linear-gradient(165deg, #162032 0%, #101827 100%);
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scd-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.scd-pill {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-family: var(--mono, monospace);
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.scd-pill.is-blue { background: rgba(37, 191, 255, 0.18); color: #25BFFF; border: 1px solid #25BFFF; }
+.scd-pill.is-green { background: rgba(33, 214, 155, 0.18); color: #21D69B; border: 1px solid #21D69B; }
+.scd-pill.is-gold { background: rgba(255, 194, 71, 0.18); color: #FFC247; border: 1px solid #FFC247; }
+
+.scd-group-header small {
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
+.scd-buttons-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.scd-action-card {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: #151A1E;
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.scd-action-card.is-blue:hover { border-color: #25BFFF; background: rgba(37, 191, 255, 0.12); transform: translateY(-2px); }
+.scd-action-card.is-cyan:hover { border-color: #42E8E8; background: rgba(66, 232, 232, 0.12); transform: translateY(-2px); }
+.scd-action-card.is-green:hover { border-color: #21D69B; background: rgba(33, 214, 155, 0.12); transform: translateY(-2px); }
+.scd-action-card.is-gold:hover { border-color: #FFC247; background: rgba(255, 194, 71, 0.12); transform: translateY(-2px); }
+
+.scd-icon {
+  flex-shrink: 0;
+  color: #42E8E8;
+}
+
+.scd-action-card.is-green .scd-icon { color: #21D69B; }
+.scd-action-card.is-gold .scd-icon { color: #FFC247; }
+
+.scd-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.scd-meta strong {
+  font-family: var(--mono, monospace);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.scd-meta span {
+  font-size: 0.72rem;
+  color: #cbd5e1;
+  line-height: 1.35;
+}
+
+.scd-go-chip {
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  font-family: var(--mono, monospace);
+  font-size: 0.66rem;
+  font-weight: 900;
+  color: #FFC247;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   7. LUNAR KNOWLEDGE ARENA (LunarKnowledgeArena.jsx)
+   ========================================================================== */
+.ka-category-bar {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.ka-cat-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  background: #151A1E;
+  color: #cbd5e1;
+  font-family: var(--mono, monospace);
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.ka-cat-btn.is-active {
+  border-color: var(--cat-col, #25BFFF);
+  background: rgba(37, 191, 255, 0.16);
+  color: #ffffff;
+}
+
+.ka-cat-code {
+  color: var(--cat-col, #42E8E8);
+  font-weight: 900;
+}
+
+.ka-done-icon {
+  color: #21D69B;
+}
+
+.ka-hearts-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono, monospace);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.ka-timer-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  background: #090D16;
+  color: #cbd5e1;
+  font-family: var(--mono, monospace);
+  font-size: 0.68rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ka-timer-toggle.is-on {
+  border-color: #f43f5e;
+  color: #fda4af;
+}
+
+.ka-question-stage {
+  padding: 20px 24px;
+  border-radius: 16px;
+  background: #151A1E;
+  border: 2px solid rgba(66, 232, 232, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ka-question-top {
+  display: grid;
+  grid-template-columns: 1.35fr 280px;
+  align-items: center;
+  gap: 18px;
+}
+
+.ka-diff-pill {
+  display: inline-block;
+  font-family: var(--mono, monospace);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+
+.ka-q-headline {
+  margin: 0;
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  font-weight: 900;
+  line-height: 1.35;
+  color: #ffffff;
+}
+
+.q-visual-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.ka-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.ka-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 18px;
+  border-radius: 12px;
+  border: 2px solid rgba(37, 191, 255, 0.35);
+  background: #101827;
+  color: #ffffff;
+  text-align: left;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.ka-option-btn:hover:not(:disabled) {
+  border-color: #42E8E8;
+  background: rgba(66, 232, 232, 0.14);
+  transform: translateY(-2px);
+}
+
+.ka-option-btn.is-correct {
+  border-color: #21D69B;
+  background: rgba(33, 214, 155, 0.22);
+}
+
+.ka-option-btn.is-wrong {
+  border-color: #f43f5e;
+  background: rgba(244, 63, 94, 0.22);
+}
+
+.ka-option-btn.is-dimmed {
+  opacity: 0.5;
+}
+
+.ka-opt-letter {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(37, 191, 255, 0.2);
+  border: 1.5px solid #42E8E8;
+  color: #42E8E8;
+  font-family: var(--mono, monospace);
+  font-size: 0.82rem;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ka-feedback-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 12px;
+}
+
+.ka-feedback-card.is-ok {
+  background: rgba(33, 214, 155, 0.15);
+  border: 2px solid #21D69B;
+}
+
+.ka-feedback-card.is-bad {
+  background: rgba(244, 63, 94, 0.15);
+  border: 2px solid #f43f5e;
+}
+
+.kafc-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 720px;
+}
+
+.kafc-icon-ok { color: #21D69B; flex-shrink: 0; }
+.kafc-icon-bad { color: #f43f5e; flex-shrink: 0; }
+
+.kafc-left strong {
+  display: block;
+  font-family: var(--mono, monospace);
+  font-size: 0.8rem;
+  color: #FFC247;
+  margin-bottom: 3px;
+}
+
+.kafc-left p {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: #f8fafc;
+}
+
+.ka-round-summary-card {
+  padding: 32px;
+  border-radius: 16px;
+  background: #151A1E;
+  border: 2px solid #FFC247;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+}
+
+.ka-xp-breakdown {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-family: var(--mono, monospace);
+  font-size: 0.82rem;
+  color: #42E8E8;
+}
+
+.ka-xp-breakdown .perfect-tag {
+  color: #21D69B;
+}
+
+/* ==========================================================================
+   8. LUNAV FIELD TRAINING (LuNavFieldTraining.jsx)
+   ========================================================================== */
+.ft-missions-bar {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.ft-mission-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  background: #151A1E;
+  color: #cbd5e1;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ft-mission-tab.is-active {
+  border-color: var(--m-col, #25BFFF);
+  background: rgba(37, 191, 255, 0.16);
+  color: #ffffff;
+}
+
+.ft-tab-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.ft-tab-text span {
+  font-family: var(--mono, monospace);
+  font-size: 0.58rem;
+  color: var(--m-col, #42E8E8);
+  font-weight: 900;
+}
+
+.ft-tab-text strong {
+  font-family: var(--mono, monospace);
+  font-size: 0.7rem;
+}
+
+.ft-done-check {
+  margin-left: auto;
+  color: #21D69B;
+}
+
+.ft-guided-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 2px solid #25BFFF;
+}
+
+.ftgb-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 760px;
+}
+
+.ftgb-code {
+  align-self: flex-start;
+  padding: 3px 9px;
+  border-radius: 6px;
+  color: #090D16;
+  font-family: var(--mono, monospace);
+  font-size: 0.66rem;
+  font-weight: 900;
+}
+
+.ftgb-instruction {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.ftgb-pointer-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono, monospace);
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #FFC247;
+}
+
+.ft-progress-chip {
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: #090D16;
+  border: 2px solid #42E8E8;
+  font-family: var(--mono, monospace);
+  font-size: 0.76rem;
+  color: #42E8E8;
+}
+
+.ft-completion-toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+}
+
+.ft-completion-toast.is-ok {
+  background: rgba(33, 214, 155, 0.16);
+  border: 2px solid #21D69B;
+}
+
+.ft-completion-toast.is-warn {
+  background: rgba(244, 63, 94, 0.16);
+  border: 2px solid #f43f5e;
+}
+
+.ftct-body {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ftct-body strong {
+  display: block;
+  font-family: var(--mono, monospace);
+  font-size: 0.78rem;
+  color: #FFC247;
+}
+
+.ftct-body p {
+  margin: 2px 0 0;
+  font-size: 0.82rem;
+}
+
+.ft-final-scorecard {
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 2px solid #21D69B;
+  background: rgba(16, 24, 39, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-family: var(--mono, monospace);
+  font-size: 0.76rem;
+}
+
+.ft-final-scorecard.is-nogo {
+  border-color: #f43f5e;
+}
+
+.ftfs-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #FFC247;
+}
+
+.ftfs-metrics {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.ft-real-tools-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.ft-sites-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ft-layer-Minimal-tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.ft-layer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(66, 232, 232, 0.35);
+  background: #151A1E;
+  color: #cbd5e1;
+  font-family: var(--mono, monospace);
+  font-size: 0.68rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ft-layer-btn.is-active {
+  border-color: #42E8E8;
+  background: rgba(66, 232, 232, 0.2);
+  color: #ffffff;
+}
+
+.ft-live-tool-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ==========================================================================
+   9. COMPARATIVE SCIENCE LAB & 6-MODULE MOON BASE UPGRADES
+   ========================================================================== */
+.csl-tabs-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.csl-tab-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  background: #151A1E;
+  color: #cbd5e1;
+  font-family: var(--mono, monospace);
+  font-size: 0.66rem;
+  cursor: pointer;
+}
+
+.csl-tab-btn.is-active {
+  border-color: #42E8E8;
+  background: rgba(66, 232, 232, 0.16);
+  color: #ffffff;
+}
+
+.csl-done-icon { color: #21D69B; }
+
+.csl-quick-check-box {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #151A1E;
+  border: 1.5px solid rgba(255, 194, 71, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.csl-qc-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.84rem;
+}
+
+.csl-qc-head span {
+  font-family: var(--mono, monospace);
+  font-size: 0.68rem;
+  font-weight: 900;
+  color: #FFC247;
+}
+
+.csl-qc-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.csl-qc-btn {
+  padding: 10px 12px;
+  border-radius: 9px;
+  border: 1.5px solid rgba(37, 191, 255, 0.35);
+  background: #101827;
+  color: #f8fafc;
+  font-size: 0.78rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.csl-qc-btn.is-correct {
+  border-color: #21D69B;
+  background: rgba(33, 214, 155, 0.2);
+}
+
+.csl-qc-btn.is-wrong {
+  border-color: #f43f5e;
+  background: rgba(244, 63, 94, 0.2);
+}
+
+.csl-qc-feedback {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: #42E8E8;
+}
+
+.colony-build-palette.is-six-cols {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+.colony-consequence-banner {
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-family: var(--mono, monospace);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.colony-consequence-banner.is-good {
+  background: rgba(33, 214, 155, 0.16);
+  border: 1.5px solid #21D69B;
+  color: #21D69B;
+}
+
+.colony-consequence-banner.is-bad {
+  background: rgba(244, 63, 94, 0.18);
+  border: 1.5px solid #f43f5e;
+  color: #fda4af;
+}
+
+.colony-tile-card.is-steep-slope {
+  background: rgba(244, 63, 94, 0.1);
+  border-color: rgba(244, 63, 94, 0.45);
+}
+
+.arcade-result-card.is-wide-report {
+  max-width: 640px;
+}
+
+.report-visual-bars {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.rvb-item {
+  padding: 10px;
+  border-radius: 9px;
+  background: #151A1E;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--mono, monospace);
+  font-size: 0.62rem;
+  color: #94a3b8;
+}
+
+.rvb-item strong {
+  font-size: 0.92rem;
+}
+
 @media (max-width: 1100px) {
   .worlds-cards-row,
-  .colony-build-palette {
+  .colony-build-palette,
+  .colony-build-palette.is-six-cols,
+  .ka-category-bar,
+  .ft-missions-bar,
+  .csl-tabs-row {
     grid-template-columns: repeat(2, 1fr);
   }
-  .arcade-bottom-panels {
+  .secondary-command-deck,
+  .arcade-bottom-panels,
+  .ka-question-top,
+  .ka-options-grid,
+  .csl-qc-options,
+  .report-visual-bars {
     grid-template-columns: 1fr;
   }
   .colony-tiles-grid {
