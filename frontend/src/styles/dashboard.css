@@ -1825,20 +1825,35 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 }
 
 /* ==========================================================================
-   9. EDITORIAL & CINEMATIC 3D MISSION LANDING (MissionLanding.jsx)
+   9. LUNAR OBSERVATORY — EXPLORE THE LUNAR SOUTH POLE (MissionLanding.jsx)
    ========================================================================== */
-.landing-main {
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
-  min-height: calc(100vh - 76px);
-  background: #090A0D;
+
+/* Hide default shell topbar when on the Lunar Observatory landing page so the 100vh hero and discreet observatory header own the viewport */
+.shell:has(.lunar-observatory-landing) > .topbar {
+  display: none;
 }
 
-@keyframes landing-hub-enter {
+.shell:has(.lunar-observatory-landing) > .landing-main {
+  padding: 0;
+  margin: 0;
+  min-height: 100vh;
+  background-color: #080b10;
+}
+
+.landing-main {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  min-height: 100vh;
+  padding: 0;
+  background-color: #080b10;
+}
+
+@keyframes observatory-fade-up {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(18px);
   }
   to {
     opacity: 1;
@@ -1872,38 +1887,42 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   justify-content: flex-start;
 }
 
-.mission-landing-hub.is-cinematic-3d.is-editorial-dark {
+/* Root Observatory Container */
+.lunar-observatory-landing {
   position: relative;
   width: 100%;
-  max-width: 1440px;
-  min-height: calc(100vh - 96px);
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  background-color: #090A0D;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0;
-  overflow: hidden;
-  color: #f8fafc;
+  background-color: #080b10;
+  color: #f4f5f7;
+  overflow-x: hidden;
   transition:
     opacity 0.42s cubic-bezier(0.4, 0, 0.2, 1),
     transform 0.42s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform, opacity;
 }
 
-.mission-landing-hub.is-cinematic-3d.is-entering {
-  animation: landing-hub-enter 0.48s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.mission-landing-hub.is-cinematic-3d.is-exiting {
+.lunar-observatory-landing.is-exiting {
   opacity: 0;
-  transform: translateY(-28px) scale(0.96);
+  transform: translateY(-24px) scale(0.985);
   pointer-events: none;
 }
 
-/* Full-Bleed 60 FPS Three.js WebGL Stage */
-.landing-3d-canvas-stage {
+/* --------------------------------------------------------------------------
+   1. FULLSCREEN HERO SECTION (100VH)
+   -------------------------------------------------------------------------- */
+.observatory-hero {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 680px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background-color: #080b10;
+  overflow: hidden;
+}
+
+/* Preserved 3D Moon + Earthrise WebGL Canvas */
+.observatory-3d-stage {
   position: absolute;
   inset: 0;
   z-index: 1;
@@ -1911,485 +1930,680 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   height: 100%;
 }
 
-/* Editorial Chiaroscuro Vignette: Deep #090A0D negative space for typography on left, clear optical horizon on right */
-.landing-editorial-vignette {
+/* Cinematic Atmospheric Vignette Blending the 3D Moon into #080B10 */
+.observatory-hero-vignette {
   position: absolute;
   inset: 0;
   z-index: 2;
   pointer-events: none;
   background:
-    linear-gradient(90deg, #090A0D 0%, rgba(9, 10, 13, 0.88) 38%, rgba(9, 10, 13, 0.24) 72%, rgba(9, 10, 13, 0.56) 100%),
-    linear-gradient(180deg, rgba(9, 10, 13, 0.72) 0%, rgba(9, 10, 13, 0.08) 44%, rgba(9, 10, 13, 0.92) 100%);
+    radial-gradient(circle at 68% 58%, rgba(30, 58, 138, 0.14) 0%, rgba(8, 11, 16, 0.42) 62%, #080b10 95%),
+    linear-gradient(90deg, #080b10 0%, rgba(8, 11, 16, 0.84) 34%, rgba(8, 11, 16, 0.12) 66%, rgba(8, 11, 16, 0.48) 100%),
+    linear-gradient(180deg, rgba(8, 11, 16, 0.64) 0%, rgba(8, 11, 16, 0) 28%, rgba(8, 11, 16, 0.18) 76%, #080b10 100%);
 }
 
-/* Structural Swiss Grid Overlay */
-.landing-editorial-frame {
+/* DISCREET OBSERVATORY HEADER */
+.observatory-header {
   position: relative;
-  z-index: 3;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  flex: 1;
-  width: 100%;
-  min-height: calc(100vh - 96px);
-}
-
-/* Top Telemetry Strip (Monospace Orbital Readout) */
-.landing-editorial-topbar {
-  display: grid;
-  grid-template-columns: 1.2fr 1fr 1.2fr 1fr;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(9, 10, 13, 0.72);
-  backdrop-filter: blur(8px);
-  font-family: 'JetBrains Mono', monospace;
-  font-variant-numeric: tabular-nums;
-}
-
-.topbar-cell {
+  z-index: 5;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 13px 24px;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 10px;
-  letter-spacing: 0.12em;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 28px 56px;
 }
 
-.topbar-cell:last-child {
-  border-right: none;
-}
-
-.topbar-cell.is-right {
-  justify-content: flex-end;
-}
-
-.topbar-index,
-.topbar-label {
-  color: #64748b;
-  font-weight: 500;
-}
-
-.topbar-value {
-  color: #e2e8f0;
-  font-weight: 600;
-}
-
-.topbar-live-indicator {
-  width: 6px;
-  height: 6px;
-  background-color: #10b981;
-  display: inline-block;
-}
-
-/* Main Editorial Hero Composition with Generous Negative Space */
-.landing-editorial-MainGrid {
-  display: grid;
-  grid-template-columns: minmax(0, 720px) 1fr;
-  align-items: end;
-  gap: 48px;
-  padding: 64px 48px 56px;
-  flex: 1;
-}
-
-.landing-hero-column {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  max-width: 680px;
-}
-
-.landing-section-kicker {
+.observatory-brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 22px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 600;
+  gap: 14px;
+}
+
+.observatory-brand-mark {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 20px;
   letter-spacing: 0.16em;
-  color: #94a3b8;
+  line-height: 1;
 }
 
-.landing-section-kicker .kicker-num {
-  color: #f8fafc;
+.observatory-brand-mark span {
+  font-weight: 500;
+  color: #43dce8;
 }
 
-.landing-section-kicker .kicker-sep {
-  color: rgba(255, 255, 255, 0.24);
+.observatory-brand-mark b {
+  font-weight: 700;
+  color: #f4f5f7;
 }
 
-/* Geometric Clean Display Headline */
-.landing-editorial-headline {
-  margin: 0 0 22px;
-  font-family: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: clamp(36px, 4.6vw, 62px);
-  font-weight: 600;
-  line-height: 1.04;
-  letter-spacing: -0.035em;
-  color: #f8fafc;
+.observatory-brand-divider {
+  width: 1px;
+  height: 14px;
+  background-color: rgba(244, 245, 247, 0.18);
 }
 
-.landing-editorial-lead {
-  margin: 0 0 38px;
-  max-width: 58ch;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 15px;
-  line-height: 1.68;
-  font-weight: 400;
-  color: #94a3b8;
+.observatory-brand-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: #8a99ad;
 }
 
-/* Architectural Dual Call-To-Action Block (Zero Pills, Zero Neon Gradients) */
-.landing-editorial-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(240px, 310px));
-  gap: 16px;
-  width: 100%;
-}
-
-.editorial-cta-btn {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 18px 20px;
-  border-radius: 2px;
-  text-align: left;
-  cursor: pointer;
-  transition:
-    background-color 0.18s ease,
-    border-color 0.18s ease,
-    color 0.18s ease,
-    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.editorial-cta-btn .cta-top-row {
+.observatory-nav {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  margin-bottom: 10px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
+  gap: 36px;
 }
 
-.editorial-cta-btn .cta-main-label {
-  font-family: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  margin-bottom: 8px;
-}
-
-.editorial-cta-btn .cta-tech-meta {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.08em;
-  line-height: 1.4;
-}
-
-.editorial-cta-btn .cta-arrow {
-  font-family: 'JetBrains Mono', monospace;
+.observatory-nav-link {
+  position: relative;
+  padding: 6px 0;
+  font-family: 'Roboto', system-ui, -apple-system, sans-serif;
   font-size: 13px;
-  transition: transform 0.18s ease;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #c5cedb;
+  transition: color 0.22s ease;
 }
 
-/* Primary Planner CTA: High-Contrast Solid Alabaster Surface */
-.editorial-cta-btn.is-primary-planner {
-  background-color: #f8fafc;
-  border: 1px solid #f8fafc;
-  color: #090A0D;
+.observatory-nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 1px;
+  background-color: #43dce8;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.editorial-cta-btn.is-primary-planner .cta-top-row {
-  color: #475569;
+.observatory-nav-link:hover {
+  color: #f4f5f7;
 }
 
-.editorial-cta-btn.is-primary-planner .cta-main-label {
-  color: #090A0D;
+.observatory-nav-link:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
 }
 
-.editorial-cta-btn.is-primary-planner .cta-tech-meta {
-  color: #334155;
+/* SCIENTIFIC OBSERVATORY ANNOTATIONS (Delicate Lines & Coordinates) */
+.observatory-annotations {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  max-width: 1480px;
+  margin: 0 auto;
 }
 
-.editorial-cta-btn.is-primary-planner:hover {
-  background-color: #ffffff;
-  border-color: #ffffff;
-  transform: translateY(-2px);
+.obs-annotation {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0;
+  animation: observatory-fade-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.editorial-cta-btn.is-primary-planner:hover .cta-arrow {
-  transform: translateX(4px);
+.obs-annotation.is-earth {
+  top: 21%;
+  right: 11%;
+  animation-delay: 0.25s;
 }
 
-/* Secondary Educators & Cadets CTA: Architectural Hairline Surface */
-.editorial-cta-btn.is-secondary-academy {
-  background-color: rgba(9, 10, 13, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: #f8fafc;
-  backdrop-filter: blur(8px);
+.obs-annotation.is-solar {
+  top: 46%;
+  right: 7%;
+  animation-delay: 0.38s;
 }
 
-.editorial-cta-btn.is-secondary-academy .cta-top-row {
-  color: #94a3b8;
+.obs-annotation.is-pole {
+  bottom: 22%;
+  left: 54%;
+  animation-delay: 0.5s;
 }
 
-.editorial-cta-btn.is-secondary-academy .cta-main-label {
-  color: #f8fafc;
+.obs-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: rgba(244, 245, 247, 0.75);
+  flex-shrink: 0;
 }
 
-.editorial-cta-btn.is-secondary-academy .cta-tech-meta {
-  color: #64748b;
+.obs-dot.is-cyan {
+  background-color: #43dce8;
+  box-shadow: 0 0 10px rgba(67, 220, 232, 0.65);
 }
 
-.editorial-cta-btn.is-secondary-academy:hover {
-  background-color: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.42);
-  transform: translateY(-2px);
+.obs-line {
+  width: 54px;
+  height: 1px;
+  background-color: rgba(244, 245, 247, 0.22);
 }
 
-.editorial-cta-btn.is-secondary-academy:hover .cta-arrow {
-  transform: translate(2px, -2px);
+.obs-line.is-short {
+  width: 36px;
 }
 
-/* Right Optical Reference Column */
-.landing-optical-sidebar {
+.obs-meta {
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.obs-meta.is-right {
+  text-align: right;
   align-items: flex-end;
 }
 
-.optical-callout-block {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-left: 16px;
-  border-left: 1px solid rgba(255, 255, 255, 0.14);
+.obs-coord {
   font-family: 'JetBrains Mono', monospace;
-  font-variant-numeric: tabular-nums;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  color: #f4f5f7;
 }
 
-.optical-row {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.optical-key {
-  font-size: 9px;
-  letter-spacing: 0.14em;
-  color: #64748b;
-}
-
-.optical-val {
+.obs-detail {
+  font-family: 'Roboto', system-ui, sans-serif;
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: #e2e8f0;
+  letter-spacing: 0.03em;
+  color: #8a99ad;
 }
 
-/* Section 3: Clean Horizon & Ephemeris Preview Specimen Dock */
-.landing-ephemeris-dock {
-  display: grid;
-  grid-template-columns: 1.35fr 1fr;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(9, 10, 13, 0.86);
-  backdrop-filter: blur(12px);
+/* HERO EDITORIAL COPY IN LEFT NEGATIVE SPACE */
+.observatory-hero-body {
+  position: relative;
+  z-index: 4;
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 0 56px;
+  display: flex;
+  align-items: center;
+  flex: 1;
 }
 
-.ephemeris-preview-chart-col {
+.observatory-hero-copy {
+  max-width: 610px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 20px 32px 18px 48px;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  align-items: flex-start;
 }
 
-.dock-header-bar {
+.observatory-eyebrow {
+  margin: 0 0 18px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  color: #43dce8;
+  opacity: 0;
+  animation: observatory-fade-up 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.08s forwards;
+}
+
+.observatory-headline {
+  margin: 0 0 22px;
+  font-family: 'Exo 2', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: clamp(36px, 4.4vw, 60px);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+  color: #f4f5f7;
+  opacity: 0;
+  animation: observatory-fade-up 0.82s cubic-bezier(0.16, 1, 0.3, 1) 0.16s forwards;
+}
+
+.observatory-subtitle {
+  margin: 0 0 38px;
+  max-width: 50ch;
+  font-family: 'Roboto', system-ui, -apple-system, sans-serif;
+  font-size: clamp(15px, 1.15vw, 17px);
+  font-weight: 300;
+  line-height: 1.68;
+  color: #9ba8ba;
+  opacity: 0;
+  animation: observatory-fade-up 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.24s forwards;
+}
+
+/* TWO PRIMARY HERO BUTTONS */
+.observatory-cta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  opacity: 0;
+  animation: observatory-fade-up 0.88s cubic-bezier(0.16, 1, 0.3, 1) 0.32s forwards;
+}
+
+.observatory-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 15px 24px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  border-radius: 2px;
+  transition:
+    background-color 0.24s ease,
+    border-color 0.24s ease,
+    color 0.24s ease,
+    transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.observatory-btn .btn-bracket {
+  opacity: 0.65;
+  transition: transform 0.24s ease, opacity 0.24s ease;
+}
+
+.observatory-btn.is-primary {
+  background-color: rgba(67, 220, 232, 0.12);
+  border: 1px solid rgba(67, 220, 232, 0.58);
+  color: #f4f5f7;
+}
+
+.observatory-btn.is-primary .btn-bracket {
+  color: #43dce8;
+}
+
+.observatory-btn.is-primary:hover {
+  background-color: #43dce8;
+  border-color: #43dce8;
+  color: #080b10;
+  transform: translateY(-2px);
+}
+
+.observatory-btn.is-primary:hover .btn-bracket {
+  color: #080b10;
+  opacity: 1;
+}
+
+.observatory-btn.is-secondary {
+  background-color: rgba(21, 26, 30, 0.65);
+  border: 1px solid rgba(244, 245, 247, 0.22);
+  color: #f4f5f7;
+  backdrop-filter: blur(8px);
+}
+
+.observatory-btn.is-secondary .btn-bracket {
+  color: #8a99ad;
+}
+
+.observatory-btn.is-secondary:hover {
+  background-color: rgba(244, 245, 247, 0.08);
+  border-color: #43dce8;
+  color: #f4f5f7;
+  transform: translateY(-2px);
+}
+
+.observatory-btn.is-secondary:hover .btn-bracket {
+  color: #43dce8;
+  opacity: 1;
+}
+
+/* HERO FOOTER & SCROLL TO DISCOVER INDICATOR */
+.observatory-hero-footer {
+  position: relative;
+  z-index: 4;
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 0 56px 26px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
+}
+
+.hero-footer-coords {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: #7c8a9e;
+}
+
+.hero-footer-coords.is-right {
+  justify-content: flex-end;
+}
+
+.hero-footer-coords .coord-sep {
+  color: rgba(67, 220, 232, 0.55);
+}
+
+.observatory-scroll-cue {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #9ba8ba;
+  transition: color 0.22s ease;
+}
+
+.observatory-scroll-cue:hover {
+  color: #43dce8;
+}
+
+.scroll-cue-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.24em;
+}
+
+.scroll-cue-line {
+  width: 1px;
+  height: 28px;
+  background: linear-gradient(180deg, #43dce8 0%, rgba(67, 220, 232, 0.08) 100%);
+}
+
+/* --------------------------------------------------------------------------
+   2. LOWER EDITORIAL SECTION — DISCOVER LUNAV
+   -------------------------------------------------------------------------- */
+.observatory-discover-section {
+  position: relative;
+  z-index: 4;
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 112px 56px 88px;
+  background-color: #080b10;
+  border-top: 1px solid rgba(244, 245, 247, 0.08);
+}
+
+.discover-section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 72px;
+}
+
+.discover-kicker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  color: #43dce8;
+}
+
+.discover-heading {
+  margin: 0;
+  font-family: 'Exo 2', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: clamp(28px, 3vw, 40px);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: #f4f5f7;
+}
+
+.discover-editorial-list {
+  display: flex;
+  flex-direction: column;
+  gap: 104px;
+}
+
+/* Asymmetric Large Editorial Feature Row */
+.discover-feature-row {
+  display: grid;
+  grid-template-columns: 1.35fr 0.9fr;
+  align-items: center;
+  gap: 64px;
+}
+
+.discover-feature-row.is-reversed {
+  grid-template-columns: 0.9fr 1.35fr;
+}
+
+.discover-feature-row.is-reversed .discover-visual-stage {
+  order: 2;
+}
+
+.discover-feature-row.is-reversed .discover-copy-col {
+  order: 1;
+}
+
+/* Large Visual Stage (#151A1E Secondary Surface) */
+.discover-visual-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9.6;
+  background-color: #151a1e;
+  border: 1px solid rgba(244, 245, 247, 0.1);
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    border-color 0.32s ease,
+    transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.discover-visual-stage:hover {
+  border-color: rgba(67, 220, 232, 0.48);
+  transform: translateY(-3px);
+}
+
+.discover-wac-backdrop {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center 85%;
+  filter: grayscale(1) contrast(1.22) brightness(0.55);
+  transform: scale(1.03);
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.discover-visual-stage:hover .discover-wac-backdrop {
+  transform: scale(1.07);
+}
+
+.discover-render-svg {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.discover-visual-overlay {
+  position: absolute;
+  top: 20px;
+  right: 22px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.visual-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  color: #9ba8ba;
+}
+
+/* Editorial Copy Column */
+.discover-copy-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 460px;
+}
+
+.discover-index-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+}
+
+.discover-index {
+  color: #43dce8;
+  font-weight: 600;
+}
+
+.discover-index-Rule {
+  width: 36px;
+  height: 1px;
+  background-color: rgba(244, 245, 247, 0.2);
+}
+
+.discover-label {
+  color: #8a99ad;
+}
+
+.discover-title {
+  margin: 0 0 18px;
+  font-family: 'Exo 2', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: clamp(26px, 2.5vw, 34px);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #f4f5f7;
+}
+
+.discover-description {
+  margin: 0 0 24px;
+  font-family: 'Roboto', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  font-weight: 300;
+  line-height: 1.7;
+  color: #9ba8ba;
+}
+
+.discover-meta-notes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 32px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: #7c8a9e;
+}
+
+.discover-action-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(67, 220, 232, 0.5);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  color: #f4f5f7;
+  transition: color 0.22s ease, border-color 0.22s ease;
+}
+
+.discover-action-link .action-arrow {
+  color: #43dce8;
+  transition: transform 0.22s ease;
+}
+
+.discover-action-link:hover {
+  color: #43dce8;
+  border-bottom-color: #43dce8;
+}
+
+.discover-action-link:hover .action-arrow {
+  transform: translateX(5px);
+}
+
+/* Minimal Observatory Colophon */
+.observatory-colophon {
+  margin-top: 96px;
+  padding-top: 28px;
+  border-top: 1px solid rgba(244, 245, 247, 0.08);
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.dock-title-group {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
+  gap: 16px;
   font-family: 'JetBrains Mono', monospace;
-}
-
-.dock-index {
   font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  color: #f8fafc;
+  letter-spacing: 0.16em;
+  color: #6c7a8e;
 }
 
-.dock-subtitle {
-  font-size: 9.5px;
-  letter-spacing: 0.1em;
-  color: #64748b;
-}
-
-/* Hairline Site Switcher Tabs */
-.dock-site-tabs {
-  display: inline-flex;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.dock-site-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  background: transparent;
-  border: none;
-  border-right: 1px solid rgba(255, 255, 255, 0.12);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.08em;
-  color: #94a3b8;
-  cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
-}
-
-.dock-site-tab:last-child {
-  border-right: none;
-}
-
-.dock-site-tab .tab-code {
-  color: #64748b;
-}
-
-.dock-site-tab:hover {
-  color: #f8fafc;
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.dock-site-tab.is-active {
-  background: #f8fafc;
-  color: #090A0D;
-  font-weight: 600;
-}
-
-.dock-site-tab.is-active .tab-code {
-  color: #475569;
-}
-
-/* SVG Horizon Profile Specimen */
-.horizon-specimen-canvas {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.horizon-specimen-svg {
-  width: 100%;
-  height: 68px;
-  display: block;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.horizon-specimen-axis {
-  display: flex;
-  justify-content: space-between;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  color: #64748b;
-}
-
-/* Right Ephemeris Telemetry Matrix (2x2 Architectural Hairline Grid) */
-.ephemeris-telemetry-matrix {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  font-family: 'JetBrains Mono', monospace;
-  font-variant-numeric: tabular-nums;
-}
-
-.telemetry-cell {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 5px;
-  padding: 18px 24px;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.telemetry-cell:nth-child(2n) {
-  border-right: none;
-}
-
-.telemetry-cell:nth-child(n + 3) {
-  border-bottom: none;
-}
-
-.telemetry-label {
-  font-size: 9px;
-  letter-spacing: 0.14em;
-  color: #64748b;
-}
-
-.telemetry-value {
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: #f8fafc;
-}
-
-.telemetry-value.is-amber {
-  color: #f59e0b;
-}
-
-.telemetry-value.is-sky {
-  color: #38bdf8;
-}
-
-.telemetry-sub {
-  font-size: 9.5px;
-  letter-spacing: 0.08em;
-  color: #94a3b8;
-}
-
+/* --------------------------------------------------------------------------
+   RESPONSIVE BREAKPOINTS
+   -------------------------------------------------------------------------- */
 @media (max-width: 1080px) {
-  .landing-editorial-topbar {
-    grid-template-columns: repeat(2, 1fr);
+  .observatory-header {
+    padding: 24px 32px;
   }
-  .landing-editorial-MainGrid {
+  .observatory-hero-body {
+    padding: 0 32px;
+  }
+  .observatory-hero-footer {
+    padding: 0 32px 24px;
+  }
+  .obs-annotation.is-solar {
+    display: none;
+  }
+  .observatory-discover-section {
+    padding: 80px 32px 64px;
+  }
+  .discover-feature-row,
+  .discover-feature-row.is-reversed {
     grid-template-columns: 1fr;
-    padding: 40px 28px;
+    gap: 32px;
   }
-  .landing-optical-sidebar {
-    justify-content: flex-start;
+  .discover-feature-row.is-reversed .discover-visual-stage {
+    order: 1;
   }
-  .landing-ephemeris-dock {
-    grid-template-columns: 1fr;
+  .discover-feature-row.is-reversed .discover-copy-col {
+    order: 2;
   }
-  .ephemeris-preview-chart-col {
-    padding: 20px 28px;
-    border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  .discover-copy-col {
+    max-width: 100%;
   }
 }
 
-@media (max-width: 640px) {
-  .landing-editorial-actions {
-    grid-template-columns: 1fr;
+@media (max-width: 720px) {
+  .observatory-header {
+    padding: 20px;
   }
-  .ephemeris-telemetry-matrix {
-    grid-template-columns: 1fr;
+  .observatory-brand-divider,
+  .observatory-brand-tag {
+    display: none;
   }
-  .telemetry-cell {
-    border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  .observatory-nav {
+    gap: 20px;
+  }
+  .observatory-annotations {
+    display: none;
+  }
+  .observatory-hero-body {
+    padding: 0 20px;
+  }
+  .observatory-cta-row {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+  .observatory-btn {
+    width: 100%;
+  }
+  .observatory-hero-footer {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    padding: 0 20px 20px;
+  }
+  .hero-footer-coords {
+    display: none;
+  }
+  .observatory-discover-section {
+    padding: 64px 20px 48px;
+  }
+  .discover-editorial-list {
+    gap: 64px;
   }
 }

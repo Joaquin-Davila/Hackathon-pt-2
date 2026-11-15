@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { createEarthTexture } from '../components/lunar/streetview/lunarTextures.js';
 
@@ -18,7 +18,7 @@ function getLrocMoonCanvas() {
           reject(new Error('2D context unavailable'));
           return;
         }
-        ctx.filter = 'grayscale(1) contrast(1.18)';
+        ctx.filter = 'grayscale(1) contrast(1.16)';
         ctx.drawImage(img, 0, 0);
         ctx.filter = 'none';
         resolve(canvas);
@@ -30,76 +30,6 @@ function getLrocMoonCanvas() {
   return cachedMoonCanvasPromise;
 }
 
-// Curated Lunar South Pole Ephemeris & Horizon Specimens for the Landing Preview
-const HORIZON_SPECIMENS = [
-  {
-    id: 'shackleton',
-    code: 'ARTEMIS-001',
-    name: 'Shackleton Rim',
-    coords: '89.54°S, 129.78°E',
-    elevationM: '+1,420 m',
-    sunElev: '+1.54°',
-    sunAz: '284.2°',
-    dteElev: '+4.22°',
-    dteAz: '000.0°',
-    illuminationWindow: '86.9% SYNODIC',
-    solarFlux: '1,361 W/m²',
-    dteStatus: 'CLEAR LOS // LOCK',
-    horizonPath:
-      'M 0,58 L 28,55 L 56,49 L 84,53 L 112,44 L 140,39 L 168,46 L 196,52 L 224,48 L 252,37 L 280,31 L 308,35 L 336,45 L 364,51 L 392,47 L 420,42 L 448,49 L 476,54 L 504,50 L 532,44 L 560,52 L 588,56 L 620,58',
-    sunWavePath:
-      'M 0,46 Q 155,34 310,27 T 620,43',
-    sunMarkerX: 280,
-    sunMarkerY: 27,
-    dteMarkerX: 62,
-    dteMarkerY: 36,
-  },
-  {
-    id: 'malapert',
-    code: 'ARTEMIS-003',
-    name: 'Malapert Massif',
-    coords: '86.04°S, 002.70°E',
-    elevationM: '+4,850 m',
-    sunElev: '+1.88°',
-    sunAz: '312.6°',
-    dteElev: '+6.74°',
-    dteAz: '000.4°',
-    illuminationWindow: '89.2% SYNODIC',
-    solarFlux: '1,364 W/m²',
-    dteStatus: 'UNOBSTRUCTED PEAK',
-    horizonPath:
-      'M 0,62 L 32,60 L 64,56 L 96,51 L 128,46 L 160,48 L 192,54 L 224,57 L 256,49 L 288,41 L 320,38 L 352,43 L 384,50 L 416,55 L 448,52 L 480,47 L 512,51 L 544,57 L 576,60 L 620,62',
-    sunWavePath:
-      'M 0,44 Q 160,30 320,24 T 620,40',
-    sunMarkerX: 320,
-    sunMarkerY: 24,
-    dteMarkerX: 62,
-    dteMarkerY: 30,
-  },
-  {
-    id: 'degerlache',
-    code: 'ARTEMIS-002',
-    name: 'De Gerlache Rim',
-    coords: '88.48°S, 291.60°E',
-    elevationM: '+2,190 m',
-    sunElev: '+1.38°',
-    sunAz: '258.0°',
-    dteElev: '+3.65°',
-    dteAz: '359.1°',
-    illuminationWindow: '84.1% SYNODIC',
-    solarFlux: '1,358 W/m²',
-    dteStatus: 'NOMINAL // +3.6°',
-    horizonPath:
-      'M 0,55 L 30,51 L 60,45 L 90,48 L 120,41 L 150,34 L 180,38 L 210,47 L 240,42 L 270,35 L 300,39 L 330,46 L 360,43 L 390,36 L 420,40 L 450,48 L 480,52 L 510,46 L 540,49 L 580,53 L 620,55',
-    sunWavePath:
-      'M 0,49 Q 150,37 300,31 T 620,47',
-    sunMarkerX: 240,
-    sunMarkerY: 33,
-    dteMarkerX: 62,
-    dteMarkerY: 40,
-  },
-];
-
 export default function MissionLanding({
   isExiting = false,
   onEnterMissionControl,
@@ -107,23 +37,21 @@ export default function MissionLanding({
   onEnterStudentView,
 }) {
   const mountRef = useRef(null);
-  const [activeSpecimenId, setActiveSpecimenId] = useState('shackleton');
-  const [utcTimestamp, setUtcTimestamp] = useState(() =>
-    new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC'
-  );
+  const discoverSectionRef = useRef(null);
 
-  const activeSpecimen =
-    HORIZON_SPECIMENS.find((item) => item.id === activeSpecimenId) || HORIZON_SPECIMENS[0];
+  const handleOpenAcademy = () => {
+    (onEnterAcademy || onEnterStudentView)?.();
+  };
 
-  // Live UTC orbital clock for the editorial telemetry header
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setUtcTimestamp(new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC');
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const handleOpenMissionControl = () => {
+    onEnterMissionControl?.();
+  };
 
-  // 60 FPS Three.js Lunar South Pole Horizon + Earthrise Scene
+  const handleScrollToDiscover = () => {
+    discoverSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  // Preserve & enhance the existing 60 FPS Three.js 3D Lunar South Pole + Earthrise Scene
   useEffect(() => {
     const container = mountRef.current;
     if (!container) return undefined;
@@ -140,19 +68,19 @@ export default function MissionLanding({
     });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.12;
+    renderer.toneMappingExposure = 1.16;
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
     renderer.domElement.style.cssText = 'width:100%;height:100%;display:block;pointer-events:none;';
 
-    // 2. Scene & Camera (framed with generous negative space on the left for editorial typography)
+    // 2. Scene & Camera — Framed for immense scale (65-75% viewport presence) with negative space on the left
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 120);
-    camera.position.set(-0.35, 0.28, 5.25);
-    camera.lookAt(0.32, -0.18, 0);
+    const camera = new THREE.PerspectiveCamera(31, 1, 0.1, 120);
+    camera.position.set(-0.42, 0.24, 4.65);
+    camera.lookAt(0.36, -0.18, 0);
 
-    // 3. Deep Stellar Field (Subtle, high-precision pinpoint stars on #090A0D)
-    const starCount = 1100;
+    // 3. Deep Space Starfield (Subtle pinpoint observatory stars over #080B10)
+    const starCount = 1200;
     const starPos = new Float32Array(starCount * 3);
     for (let i = 0; i < starCount; i++) {
       const u = Math.random();
@@ -167,37 +95,39 @@ export default function MissionLanding({
     const starGeo = new THREE.BufferGeometry();
     starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
     const starMat = new THREE.PointsMaterial({
-      color: 0xe2e8f0,
-      size: 0.052,
+      color: 0xdbeafe,
+      size: 0.055,
       transparent: true,
-      opacity: 0.54,
+      opacity: 0.58,
       depthWrite: false,
     });
     const stars = new THREE.Points(starGeo, starMat);
     scene.add(stars);
 
-    // 4. Sculpted 3D Moon Focused on the Lunar South Pole Horizon
+    // 4. Giant 3D Moon Focused on the Rugged Lunar South Pole Horizon
     const moonGroup = new THREE.Group();
-    moonGroup.position.set(0.62, -2.28, -0.15);
+    // Positioned so the immense lunar limb sweeps across 65-75% of the composition
+    moonGroup.position.set(0.68, -1.92, 0.12);
+    // Tilted so the South Pole (-90° lat) faces toward the upper-front camera horizon
     moonGroup.rotation.x = THREE.MathUtils.degToRad(-68);
     scene.add(moonGroup);
 
     const moonRadius = 2.68;
     const moonGeo = new THREE.SphereGeometry(moonRadius, 112, 84);
     const moonMat = new THREE.MeshStandardMaterial({
-      color: 0xcbd5e1,
-      roughness: 0.95,
+      color: 0xcfd4dc,
+      roughness: 0.94,
       metalness: 0.02,
       bumpScale: 0.044,
     });
     const moonMesh = new THREE.Mesh(moonGeo, moonMat);
     moonGroup.add(moonMesh);
 
-    // Restrained optical limb atmosphere (no neon cyan glow)
-    const moonGlowGeo = new THREE.SphereGeometry(moonRadius * 1.022, 64, 48);
+    // Subtle Fresnel Limb Glow on the Lunar Horizon (#43DCE8 Lunar Cyan & Deep Blue)
+    const moonGlowGeo = new THREE.SphereGeometry(moonRadius * 1.026, 64, 48);
     const moonGlowMat = new THREE.ShaderMaterial({
       uniforms: {
-        glowColor: { value: new THREE.Color(0x94a3b8) },
+        glowColor: { value: new THREE.Color(0x43dce8) },
       },
       vertexShader: `
         varying vec3 vNormal;
@@ -215,8 +145,8 @@ export default function MissionLanding({
         uniform vec3 glowColor;
         void main() {
           float rim = clamp(dot(-vNormal, vViewPosition), 0.0, 1.0);
-          float intensity = pow(rim * 1.9, 2.8) * clamp(vNormal.y + 0.5, 0.0, 1.0);
-          gl_FragColor = vec4(glowColor, intensity * 0.24);
+          float intensity = pow(rim * 1.95, 2.6) * clamp(vNormal.y + 0.52, 0.0, 1.0);
+          gl_FragColor = vec4(glowColor, intensity * 0.28);
         }
       `,
       side: THREE.BackSide,
@@ -236,29 +166,30 @@ export default function MissionLanding({
         moonTexture.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
         moonMat.map = moonTexture;
         moonMat.bumpMap = moonTexture;
-        moonMat.color.set(0xf8fafc);
+        moonMat.color.set(0xffffff);
         moonMat.needsUpdate = true;
       })
       .catch(() => {});
 
-    // 5. Distant Blue Earth ("Earthrise") Above the Eastern South Pole Limb
+    // 5. Distant Blue Earth ("Earthrise") Visible Above the Lunar South Pole Horizon
     const earthGroup = new THREE.Group();
-    earthGroup.position.set(1.95, 0.78, -3.5);
+    earthGroup.position.set(1.88, 0.86, -3.25);
     scene.add(earthGroup);
 
-    const earthRadius = 0.31;
+    const earthRadius = 0.32;
     const earthGeo = new THREE.SphereGeometry(earthRadius, 48, 36);
     const earthTex = createEarthTexture();
     const earthMat = new THREE.MeshStandardMaterial({
       map: earthTex,
-      roughness: 0.58,
-      metalness: 0.06,
+      roughness: 0.55,
+      metalness: 0.08,
     });
     const earthMesh = new THREE.Mesh(earthGeo, earthMat);
     earthMesh.rotation.z = THREE.MathUtils.degToRad(23.4);
     earthGroup.add(earthMesh);
 
-    const earthHaloGeo = new THREE.SphereGeometry(earthRadius * 1.15, 36, 28);
+    // Earth Atmospheric Halo
+    const earthHaloGeo = new THREE.SphereGeometry(earthRadius * 1.18, 36, 28);
     const earthHaloMat = new THREE.ShaderMaterial({
       uniforms: {
         haloColor: { value: new THREE.Color(0x60a5fa) },
@@ -279,8 +210,8 @@ export default function MissionLanding({
         uniform vec3 haloColor;
         void main() {
           float f = clamp(dot(-vNormal, vView), 0.0, 1.0);
-          float a = pow(f * 2.0, 2.2);
-          gl_FragColor = vec4(haloColor, a * 0.45);
+          float a = pow(f * 2.1, 2.0);
+          gl_FragColor = vec4(haloColor, a * 0.58);
         }
       `,
       side: THREE.BackSide,
@@ -291,25 +222,26 @@ export default function MissionLanding({
     const earthHaloMesh = new THREE.Mesh(earthHaloGeo, earthHaloMat);
     earthGroup.add(earthHaloMesh);
 
-    // 6. Raking Low-Angle Polar Sunlight (1.5° grazing incidence across crater rims)
-    const sunKeyLight = new THREE.DirectionalLight(0xfff8ed, 2.75);
-    sunKeyLight.position.set(-4.4, 2.2, 1.9);
-    const earthshineFill = new THREE.DirectionalLight(0x64748b, 0.22);
+    // 6. Realistic Grazing Polar Sunlight & Soft Shadows Across South Pole Craters
+    const sunKeyLight = new THREE.DirectionalLight(0xfff6e5, 2.7);
+    sunKeyLight.position.set(-4.3, 2.35, 2.0);
+    const earthshineFill = new THREE.DirectionalLight(0x3b82f6, 0.25);
     earthshineFill.position.set(3.0, 2.0, 1.5);
-    const ambientLight = new THREE.AmbientLight(0x0f172a, 0.28);
+    const ambientLight = new THREE.AmbientLight(0x151a24, 0.32);
     scene.add(sunKeyLight, earthshineFill, ambientLight);
 
-    // Subtle pointer parallax
+    // Subtle cursor parallax
     const mouseTarget = { x: 0, y: 0 };
     const mouseCurrent = { x: 0, y: 0 };
     const handlePointerMove = (e) => {
       const nx = (e.clientX / window.innerWidth) * 2 - 1;
       const ny = (e.clientY / window.innerHeight) * 2 - 1;
-      mouseTarget.x = nx * 0.1;
-      mouseTarget.y = -ny * 0.06;
+      mouseTarget.x = nx * 0.11;
+      mouseTarget.y = -ny * 0.065;
     };
     window.addEventListener('pointermove', handlePointerMove, { passive: true });
 
+    // Responsive ResizeObserver
     const handleResize = () => {
       if (!container) return;
       const w = container.clientWidth || 1;
@@ -322,21 +254,22 @@ export default function MissionLanding({
     resizeObserver.observe(container);
     handleResize();
 
+    // 7. 60 FPS Slow Orbital / Inertial Render Loop
     let lastTime = performance.now();
     const animate = (now) => {
       rafId = requestAnimationFrame(animate);
       const dt = Math.min(0.1, (now - lastTime) / 1000);
       lastTime = now;
 
-      moonMesh.rotation.y += dt * 0.034;
+      moonMesh.rotation.y += dt * 0.032;
       earthMesh.rotation.y += dt * 0.095;
       stars.rotation.y += dt * 0.003;
 
       mouseCurrent.x += (mouseTarget.x - mouseCurrent.x) * 0.045;
       mouseCurrent.y += (mouseTarget.y - mouseCurrent.y) * 0.045;
-      camera.position.x = -0.35 + mouseCurrent.x;
-      camera.position.y = 0.28 + mouseCurrent.y;
-      camera.lookAt(0.32, -0.18, 0);
+      camera.position.x = -0.42 + mouseCurrent.x;
+      camera.position.y = 0.24 + mouseCurrent.y;
+      camera.lookAt(0.36, -0.18, 0);
 
       renderer.render(scene, camera);
     };
@@ -365,285 +298,526 @@ export default function MissionLanding({
   }, []);
 
   return (
-    <section
-      className={`mission-landing-hub is-cinematic-3d is-editorial-dark ${
-        isExiting ? 'is-exiting' : 'is-entering'
-      }`}
-      aria-labelledby="landing-hero-title"
+    <div
+      className={`lunar-observatory-landing ${isExiting ? 'is-exiting' : 'is-entering'}`}
     >
-      {/* 1. Full-Bleed 60 FPS 3D Lunar South Pole + Earthrise Canvas on #090A0D */}
-      <div ref={mountRef} className="landing-3d-canvas-stage" aria-hidden="true" />
+      {/* =====================================================================
+          1. FULLSCREEN HERO SECTION (100VH) — LUNAR OBSERVATORY
+         ===================================================================== */}
+      <section className="observatory-hero" aria-labelledby="observatory-hero-title">
+        {/* Preserved 3D Moon + Earthrise WebGL Stage (Occupies 65-75% of visual space) */}
+        <div ref={mountRef} className="observatory-3d-stage" aria-hidden="true" />
 
-      {/* Editorial Chiaroscuro Vignette (preserves deep #090A0D negative space on left) */}
-      <div className="landing-editorial-vignette" aria-hidden="true" />
+        {/* Atmospheric Blending Vignette for Seamless Integration with #080B10 */}
+        <div className="observatory-hero-vignette" aria-hidden="true" />
 
-      {/* Structural Architectural Grid Container */}
-      <div className="landing-editorial-frame">
-        {/* TOP TELEMETRY META STRIP (Monospace Orbital Readout, Zero Pills) */}
-        <header className="landing-editorial-topbar" aria-label="Orbital Telemetry Reference">
-          <div className="topbar-cell">
-            <span className="topbar-index">SYS // 00</span>
-            <span className="topbar-value">LUNAV SURFACE INTELLIGENCE V2.4</span>
+        {/* DISCREET HEADER: LuNav Logo + Academy + Mission Control (No Explore) */}
+        <header className="observatory-header">
+          <div className="observatory-brand">
+            <span className="observatory-brand-mark">
+              <span>LU</span>
+              <b>NAV</b>
+            </span>
+            <span className="observatory-brand-divider" aria-hidden="true" />
+            <span className="observatory-brand-tag">LUNAR OBSERVATORY</span>
           </div>
-          <div className="topbar-cell">
-            <span className="topbar-label">TARGET BODY</span>
-            <span className="topbar-value">301 LUNA // 84°S – 90°S</span>
-          </div>
-          <div className="topbar-cell">
-            <span className="topbar-label">EPHEMERIS KERNEL</span>
-            <span className="topbar-value">JPL DE440 · LRO LOLA 128 PPD</span>
-          </div>
-          <div className="topbar-cell is-right">
-            <span className="topbar-live-indicator" aria-hidden="true" />
-            <span className="topbar-value">{utcTimestamp}</span>
-          </div>
+
+          <nav className="observatory-nav" aria-label="Primary Navigation">
+            <button
+              type="button"
+              className="observatory-nav-link"
+              onClick={handleOpenAcademy}
+            >
+              Academy
+            </button>
+            <button
+              type="button"
+              className="observatory-nav-link"
+              onClick={handleOpenMissionControl}
+            >
+              Mission Control
+            </button>
+          </nav>
         </header>
 
-        {/* SECTION 1 & 2: EDITORIAL HERO + DIRECT DUAL CALL-TO-ACTION */}
-        <div className="landing-editorial-MainGrid">
-          <div className="landing-hero-column">
-            <div className="landing-section-kicker">
-              <span className="kicker-num">01</span>
-              <span className="kicker-sep">/</span>
-              <span className="kicker-text">ARTEMIS SOUTH POLE LANDING SITE ARCHITECTURE</span>
+        {/* SCIENTIFIC OBSERVATORY ANNOTATIONS (Delicate Lines & Coordinates, Not Cards) */}
+        <div className="observatory-annotations" aria-hidden="true">
+          {/* Earthrise Optical Annotation near Upper-Right Limb */}
+          <div className="obs-annotation is-earth">
+            <span className="obs-dot is-cyan" />
+            <span className="obs-line is-short" />
+            <div className="obs-meta">
+              <span className="obs-coord">EARTH VISIBILITY</span>
+              <span className="obs-detail">Direct-to-Earth horizon lock</span>
             </div>
+          </div>
 
-            <h1 id="landing-hero-title" className="landing-editorial-headline">
-              Navigate the permanent twilight of the Lunar South Pole.
-            </h1>
+          {/* Grazing Solar Incidence Annotation */}
+          <div className="obs-annotation is-solar">
+            <div className="obs-meta is-right">
+              <span className="obs-coord">SOLAR ELEVATION — 1.54°</span>
+              <span className="obs-detail">Grazing polar illumination</span>
+            </div>
+            <span className="obs-line" />
+            <span className="obs-dot" />
+          </div>
 
-            <p className="landing-editorial-lead">
-              At 89° South, the Sun skims just 1.5° above crater ridges—casting 40-kilometer
-              topographic shadows while Earth hovers near the northern horizon. LuNav synthesizes
-              LRO LOLA laser altimetry and JPL Horizons ephemerides to model 360° terrain occlusion,
-              solar power availability, and Direct-to-Earth communication links in real time.
+          {/* Lunar South Pole Coordinate Annotation */}
+          <div className="obs-annotation is-pole">
+            <span className="obs-dot is-cyan" />
+            <span className="obs-line" />
+            <div className="obs-meta">
+              <span className="obs-coord">89.5° S — LUNAR SOUTH POLE</span>
+              <span className="obs-detail">Lunar terrain — LOLA DEM</span>
+            </div>
+          </div>
+        </div>
+
+        {/* HERO EDITORIAL CONTENT IN LEFT NEGATIVE SPACE */}
+        <div className="observatory-hero-body">
+          <div className="observatory-hero-copy">
+            <p className="observatory-eyebrow">
+              LUNAR OBSERVATORY — EXPLORE THE LUNAR SOUTH POLE
             </p>
 
-            {/* Clean Architectural Dual CTAs: Mission Planners vs. Educators / Cadets */}
+            <h1 id="observatory-hero-title" className="observatory-headline">
+              THE MOON IS A WORLD
+              <br />
+              WAITING TO BE EXPLORED.
+            </h1>
+
+            <p className="observatory-subtitle">
+              Discover the lunar South Pole, understand its hidden terrain and explore the
+              challenges of humanity&apos;s return to the Moon.
+            </p>
+
             <div
-              className="landing-editorial-actions"
+              className="observatory-cta-row"
               role="group"
-              aria-label="Select Operational Workspace"
+              aria-label="Begin Lunar Exploration"
             >
               <button
                 type="button"
-                className="editorial-cta-btn is-primary-planner"
-                onClick={() => onEnterMissionControl?.()}
+                className="observatory-btn is-primary"
+                onClick={handleOpenAcademy}
               >
-                <div className="cta-top-row">
-                  <span className="cta-role-tag">FOR MISSION PLANNERS</span>
-                  <span className="cta-arrow" aria-hidden="true">
-                    →
-                  </span>
-                </div>
-                <span className="cta-main-label">Launch Mission Control</span>
-                <span className="cta-tech-meta">
-                  360° LOLA HORIZON VISOR · WAC POLAR DEM · DTE LINK BUDGET
-                </span>
+                <span className="btn-bracket" aria-hidden="true">[</span>
+                <span>ENTER LUNAV ACADEMY</span>
+                <span className="btn-bracket" aria-hidden="true">]</span>
               </button>
 
               <button
                 type="button"
-                className="editorial-cta-btn is-secondary-academy"
-                onClick={() => (onEnterAcademy || onEnterStudentView)?.()}
+                className="observatory-btn is-secondary"
+                onClick={handleOpenMissionControl}
               >
-                <div className="cta-top-row">
-                  <span className="cta-role-tag">FOR EDUCATORS &amp; CADETS</span>
-                  <span className="cta-arrow" aria-hidden="true">
-                    ↗
-                  </span>
-                </div>
-                <span className="cta-main-label">Enter LuNav Academy</span>
-                <span className="cta-tech-meta">
-                  5 INTERACTIVE SIMULATORS · FIELD TRAINING · EARTH VS MOON LAB
-                </span>
+                <span className="btn-bracket" aria-hidden="true">[</span>
+                <span>LAUNCH MISSION CONTROL</span>
+                <span className="btn-bracket" aria-hidden="true">]</span>
               </button>
             </div>
           </div>
-
-          {/* Right Negative Space Column: Minimal Optical Callout Aligned with 3D Horizon */}
-          <aside className="landing-optical-sidebar" aria-label="Optical Target Reference">
-            <div className="optical-callout-block">
-              <div className="optical-row">
-                <span className="optical-key">OPTICAL LOCK</span>
-                <span className="optical-val">EARTH (TARGET 399)</span>
-              </div>
-              <div className="optical-row">
-                <span className="optical-key">SOLAR INCIDENCE</span>
-                <span className="optical-val">GRAZING POLAR · 1.54°</span>
-              </div>
-              <div className="optical-row">
-                <span className="optical-key">RELIEF DATASET</span>
-                <span className="optical-val">LROC WAC + LOLA DEM</span>
-              </div>
-            </div>
-          </aside>
         </div>
 
-        {/* SECTION 3: CLEAN HORIZON & EPHEMERIS PREVIEW SPECIMEN DOCK */}
-        <footer
-          className="landing-ephemeris-dock"
-          aria-label="Live Horizon and Ephemeris Preview"
-        >
-          {/* Left Dock Panel: Interactive 360° Horizon Elevation Profile Preview */}
-          <div className="ephemeris-preview-chart-col">
-            <div className="dock-header-bar">
-              <div className="dock-title-group">
-                <span className="dock-index">02 // HORIZON &amp; EPHEMERIS PREVIEW</span>
-                <span className="dock-subtitle">
-                  360° AZIMUTH ELEVATION MASK vs. ECLIPTIC SOLAR WAVE
-                </span>
-              </div>
-
-              {/* Site Switcher Tabs (Sharp Hairline Tabs) */}
-              <div className="dock-site-tabs" role="tablist" aria-label="Candidate South Pole Sites">
-                {HORIZON_SPECIMENS.map((site) => {
-                  const isSelected = site.id === activeSpecimen.id;
-                  return (
-                    <button
-                      key={site.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={isSelected}
-                      className={`dock-site-tab ${isSelected ? 'is-active' : ''}`}
-                      onClick={() => setActiveSpecimenId(site.id)}
-                    >
-                      <span className="tab-code">{site.code}</span>
-                      <span className="tab-name">{site.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Clean SVG Topographic Horizon Curve + Grazing Sun & DTE Vectors */}
-            <div className="horizon-specimen-canvas">
-              <svg
-                viewBox="0 0 620 76"
-                preserveAspectRatio="none"
-                className="horizon-specimen-svg"
-                 role="img"
-                aria-label={`360 degree horizon elevation profile for ${activeSpecimen.name}`}
-              >
-                {/* Subtle 0° Mathematical Horizon Reference Line */}
-                <line
-                  x1="0"
-                  y1="48"
-                  x2="620"
-                  y2="48"
-                  stroke="rgba(255, 255, 255, 0.12)"
-                  strokeDasharray="3 3"
-                  strokeWidth="1"
-                />
-
-                {/* Azimuth Meridian Hairlines (90° E, 180° S, 270° W) */}
-                <line x1="155" y1="0" x2="155" y2="76" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" />
-                <line x1="310" y1="0" x2="310" y2="76" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" />
-                <line x1="465" y1="0" x2="465" y2="76" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" />
-
-                {/* Diurnal Solar Ecliptic Trajectory Wave */}
-                <path
-                  d={activeSpecimen.sunWavePath}
-                  fill="none"
-                  stroke="rgba(245, 158, 11, 0.65)"
-                  strokeWidth="1.25"
-                  strokeDasharray="4 3"
-                />
-
-                {/* LRO LOLA Terrain Occlusion Fill */}
-                <path
-                  d={`${activeSpecimen.horizonPath} L 620,76 L 0,76 Z`}
-                  fill="rgba(248, 250, 252, 0.06)"
-                />
-
-                {/* LRO LOLA 360° Ridge Silhouette Line */}
-                <path
-                  d={activeSpecimen.horizonPath}
-                  fill="none"
-                  stroke="rgba(248, 250, 252, 0.78)"
-                  strokeWidth="1.5"
-                />
-
-                {/* Direct-to-Earth (DTE) Azimuth Lock Vector */}
-                <line
-                  x1={activeSpecimen.dteMarkerX}
-                  y1={activeSpecimen.dteMarkerY}
-                  x2={activeSpecimen.dteMarkerX}
-                  y2="76"
-                  stroke="rgba(56, 189, 248, 0.45)"
-                  strokeWidth="1"
-                />
-                <circle
-                  cx={activeSpecimen.dteMarkerX}
-                  cy={activeSpecimen.dteMarkerY}
-                  r="3.2"
-                  fill="#38bdf8"
-                />
-
-                {/* Solar Ephemeris Position Marker */}
-                <line
-                  x1={activeSpecimen.sunMarkerX}
-                  y1={activeSpecimen.sunMarkerY}
-                  x2={activeSpecimen.sunMarkerX}
-                  y2="76"
-                  stroke="rgba(245, 158, 11, 0.45)"
-                  strokeWidth="1"
-                />
-                <circle
-                  cx={activeSpecimen.sunMarkerX}
-                  cy={activeSpecimen.sunMarkerY}
-                  r="3.6"
-                  fill="#f59e0b"
-                />
-              </svg>
-
-              {/* Azimuth Axis Scale & Vector Legend */}
-              <div className="horizon-specimen-axis">
-                <span>000° N (DTE AXIS)</span>
-                <span>090° E</span>
-                <span>180° S (POLEWARD)</span>
-                <span>270° W</span>
-                <span>360° N</span>
-              </div>
-            </div>
+        {/* BOTTOM SCROLL CUE + MINIMAL COORDINATE HAIRLINE */}
+        <footer className="observatory-hero-footer">
+          <div className="hero-footer-coords" aria-hidden="true">
+            <span>89.5° S</span>
+            <span className="coord-sep">·</span>
+            <span>SOLAR ELEVATION 1.54°</span>
+            <span className="coord-sep">·</span>
+            <span>LOLA DEM</span>
           </div>
 
-          {/* Right Dock Panel: High-Contrast Monospace Ephemeris Telemetry Matrix */}
-          <div className="ephemeris-telemetry-matrix">
-            <div className="telemetry-cell">
-              <span className="telemetry-label">SELECTED SITE COORDINATES</span>
-              <strong className="telemetry-value">{activeSpecimen.coords}</strong>
-              <span className="telemetry-sub">
-                ELEVATION {activeSpecimen.elevationM} · {activeSpecimen.name.toUpperCase()}
-              </span>
-            </div>
+          <button
+            type="button"
+            className="observatory-scroll-cue"
+            onClick={handleScrollToDiscover}
+            aria-label="Scroll to Discover LuNav"
+          >
+            <span className="scroll-cue-label">SCROLL TO DISCOVER</span>
+            <span className="scroll-cue-line" aria-hidden="true" />
+          </button>
 
-            <div className="telemetry-cell">
-              <span className="telemetry-label">SOLAR EPHEMERIS VECTOR</span>
-              <strong className="telemetry-value is-amber">
-                ELEV {activeSpecimen.sunElev} / AZ {activeSpecimen.sunAz}
-              </strong>
-              <span className="telemetry-sub">
-                INCIDENT FLUX {activeSpecimen.solarFlux}
-              </span>
-            </div>
-
-            <div className="telemetry-cell">
-              <span className="telemetry-label">DIRECT-TO-EARTH (DTE) LINK</span>
-              <strong className="telemetry-value is-sky">
-                ELEV {activeSpecimen.dteElev} / AZ {activeSpecimen.dteAz}
-              </strong>
-              <span className="telemetry-sub">{activeSpecimen.dteStatus}</span>
-            </div>
-
-            <div className="telemetry-cell">
-              <span className="telemetry-label">SYNODIC ILLUMINATION</span>
-              <strong className="telemetry-value">{activeSpecimen.illuminationWindow}</strong>
-              <span className="telemetry-sub">LOLA 128 PPD HORIZON CLEARANCE</span>
-            </div>
+          <div className="hero-footer-coords is-right" aria-hidden="true">
+            <span>EARTH VISIBILITY</span>
+            <span className="coord-sep">·</span>
+            <span>JPL HORIZONS</span>
           </div>
         </footer>
-      </div>
-    </section>
+      </section>
+
+      {/* =====================================================================
+          2. LOWER EDITORIAL SECTION — DISCOVER LUNAV (TWO LARGE PORTALS)
+         ===================================================================== */}
+      <section
+        ref={discoverSectionRef}
+        id="discover-lunav"
+        className="observatory-discover-section"
+        aria-labelledby="discover-section-heading"
+      >
+        <div className="discover-section-header">
+          <span className="discover-kicker">DISCOVER LUNAV</span>
+          <h2 id="discover-section-heading" className="discover-heading">
+            Two pathways into the Lunar South Pole.
+          </h2>
+        </div>
+
+        <div className="discover-editorial-list">
+          {/* 01 — ACADEMY */}
+          <article className="discover-feature-row is-academy">
+            <div
+              className="discover-visual-stage"
+              onClick={handleOpenAcademy}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleOpenAcademy();
+                }
+              }}
+              aria-label="Enter LuNav Academy"
+            >
+              {/* Large Observatory Render: Comparative Earth vs. Moon Physics & Lunar Training Simulation */}
+              <svg
+                viewBox="0 0 800 480"
+                className="discover-render-svg"
+                role="img"
+                aria-label="Visual representation of LuNav Academy interactive lunar training and Earth versus Moon physics experiments"
+              >
+                <defs>
+                  <radialGradient id="academySpaceGlow" cx="62%" cy="48%" r="58%">
+                    <stop offset="0%" stopColor="#1e3a8a" stopOpacity="0.38" />
+                    <stop offset="55%" stopColor="#151a1e" stopOpacity="0.18" />
+                    <stop offset="100%" stopColor="#080b10" stopOpacity="0" />
+                  </radialGradient>
+                  <linearGradient id="cyanArcGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#43dce8" stopOpacity="0.15" />
+                    <stop offset="60%" stopColor="#43dce8" stopOpacity="0.85" />
+                    <stop offset="100%" stopColor="#f4f5f7" stopOpacity="0.95" />
+                  </linearGradient>
+                  <linearGradient id="earthArcGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.12" />
+                    <stop offset="100%" stopColor="#60a5fa" stopOpacity="0.55" />
+                  </linearGradient>
+                </defs>
+
+                {/* Deep Observatory Background Glow */}
+                <rect width="800" height="480" fill="#0d1117" />
+                <rect width="800" height="480" fill="url(#academySpaceGlow)" />
+
+                {/* Subtle Observatory Astrometric Grid */}
+                <g stroke="rgba(244, 245, 247, 0.05)" strokeWidth="1">
+                  <line x1="0" y1="120" x2="800" y2="120" />
+                  <line x1="0" y1="240" x2="800" y2="240" />
+                  <line x1="0" y1="360" x2="800" y2="360" />
+                  <line x1="200" y1="0" x2="200" y2="480" />
+                  <line x1="400" y1="0" x2="400" y2="480" />
+                  <line x1="600" y1="0" x2="600" y2="480" />
+                </g>
+
+                {/* Orbital & Ballistic Comparative Circles */}
+                <circle
+                  cx="510"
+                  cy="240"
+                  r="155"
+                  fill="none"
+                  stroke="rgba(67, 220, 232, 0.16)"
+                  strokeWidth="1"
+                  strokeDasharray="4 6"
+                />
+                <circle
+                  cx="510"
+                  cy="240"
+                  r="112"
+                  fill="none"
+                  stroke="rgba(244, 245, 247, 0.1)"
+                  strokeWidth="1"
+                />
+
+                {/* Lunar Horizon Terrain Silhouette at Bottom of Stage */}
+                <path
+                  d="M 0,392 Q 110,378 210,386 T 420,372 T 630,384 T 800,368 L 800,480 L 0,480 Z"
+                  fill="#151a1e"
+                  stroke="rgba(244, 245, 247, 0.18)"
+                  strokeWidth="1"
+                />
+
+                {/* Earth Gravity Trajectory (9.81 m/s² — Short Arc) */}
+                <path
+                  d="M 110,384 Q 215,255 320,382"
+                  fill="none"
+                  stroke="url(#earthArcGrad)"
+                  strokeWidth="1.75"
+                  strokeDasharray="5 5"
+                />
+
+                {/* Lunar Gravity Trajectory (1.62 m/s² — Extended Low-Gravity Arc) */}
+                <path
+                  d="M 110,384 Q 395,95 690,376"
+                  fill="none"
+                  stroke="url(#cyanArcGrad)"
+                  strokeWidth="2.25"
+                />
+
+                {/* Descent & Touchdown Vector Geometry */}
+                <line
+                  x1="510"
+                  y1="85"
+                  x2="510"
+                  y2="375"
+                  stroke="rgba(67, 220, 232, 0.28)"
+                  strokeWidth="1"
+                  strokeDasharray="3 4"
+                />
+                <circle cx="110" cy="384" r="4.5" fill="#43dce8" />
+                <circle cx="320" cy="382" r="3.5" fill="#60a5fa" />
+                <circle cx="408" cy="236" r="5" fill="#f4f5f7" />
+                <circle
+                  cx="408"
+                  cy="236"
+                  r="14"
+                  fill="none"
+                  stroke="rgba(67, 220, 232, 0.55)"
+                  strokeWidth="1"
+                />
+                <circle cx="690" cy="376" r="5" fill="#43dce8" />
+
+                {/* Scientific Annotation Labels Inside Render */}
+                <g fontFamily="JetBrains Mono, monospace" fontSize="11" letterSpacing="1.4">
+                  <text x="48" y="54" fill="#43dce8">
+                    SIMULATION // EARTH VS. MOON GRAVITY &amp; SURFACE TRAINING
+                  </text>
+                  <text x="360" y="208" fill="#f4f5f7">
+                    LUNA — 1.62 m/s² (6× RANGE)
+                  </text>
+                  <text x="182" y="302" fill="#8a99ad">
+                    EARTH — 9.81 m/s²
+                  </text>
+                  <text x="48" y="444" fill="#8a99ad">
+                    89.5° S · ROVER NAVIGATION · SOLAR POWER · DESCENT PHYSICS
+                  </text>
+                </g>
+              </svg>
+
+              <div className="discover-visual-overlay">
+                <span className="visual-badge">INTERACTIVE TRAINING LAB</span>
+              </div>
+            </div>
+
+            <div className="discover-copy-col">
+              <div className="discover-index-line">
+                <span className="discover-index">01</span>
+                <span className="discover-index-Rule" aria-hidden="true" />
+                <span className="discover-label">ACADEMY</span>
+              </div>
+
+              <h3 className="discover-title">01 — ACADEMY</h3>
+
+              <p className="discover-description">
+                Learn through interactive challenges, scientific experiments and Earth vs. Moon
+                comparisons.
+              </p>
+
+              <div className="discover-meta-notes">
+                <span>EARTH VS. MOON PHYSICS</span>
+                <span>·</span>
+                <span>SOLAR &amp; TERRAIN SIMULATORS</span>
+              </div>
+
+              <button
+                type="button"
+                className="discover-action-link"
+                onClick={handleOpenAcademy}
+              >
+                <span>ENTER LUNAV ACADEMY</span>
+                <span className="action-arrow" aria-hidden="true">→</span>
+              </button>
+            </div>
+          </article>
+
+          {/* 02 — MISSION CONTROL */}
+          <article className="discover-feature-row is-mission-control is-reversed">
+            <div
+              className="discover-visual-stage"
+              onClick={handleOpenMissionControl}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleOpenMissionControl();
+                }
+              }}
+              aria-label="Launch Mission Control"
+            >
+              {/* Real LROC WAC Lunar Texture Backdrop + Polar Stereographic Horizon & Crater Map */}
+              <div
+                className="discover-wac-backdrop"
+                style={{ backgroundImage: "url('/images/lro-wac-global-2k.jpg')" }}
+                aria-hidden="true"
+              />
+
+              <svg
+                viewBox="0 0 800 480"
+                className="discover-render-svg is-overlay"
+                role="img"
+                aria-label="Visual representation of Mission Control lunar South Pole topographic map, crater coordinates, and 360 degree horizon elevation analysis"
+              >
+                <defs>
+                  <radialGradient id="polarMapVignette" cx="50%" cy="46%" r="56%">
+                    <stop offset="0%" stopColor="#080b10" stopOpacity="0.18" />
+                    <stop offset="70%" stopColor="#080b10" stopOpacity="0.72" />
+                    <stop offset="100%" stopColor="#080b10" stopOpacity="0.94" />
+                  </radialGradient>
+                </defs>
+
+                <rect width="800" height="480" fill="url(#polarMapVignette)" />
+
+                {/* Concentric Lunar South Pole Stereographic Rings (84°S – 90°S) */}
+                <g transform="translate(400, 215)">
+                  <circle
+                    r="168"
+                    fill="none"
+                    stroke="rgba(244, 245, 247, 0.14)"
+                    strokeWidth="1"
+                  />
+                  <circle
+                    r="116"
+                    fill="none"
+                    stroke="rgba(244, 245, 247, 0.16)"
+                    strokeWidth="1"
+                    strokeDasharray="4 5"
+                  />
+                  <circle
+                    r="64"
+                    fill="none"
+                    stroke="rgba(67, 220, 232, 0.32)"
+                    strokeWidth="1"
+                  />
+                  <circle r="3.5" fill="#43dce8" />
+
+                  {/* Azimuth Crosshairs */}
+                  <line x1="-185" y1="0" x2="185" y2="0" stroke="rgba(244, 245, 247, 0.1)" strokeWidth="1" />
+                  <line x1="0" y1="-185" x2="0" y2="185" stroke="rgba(244, 245, 247, 0.1)" strokeWidth="1" />
+
+                  {/* Candidate Landing Site Reticles (Verified Project Sites) */}
+                  <g transform="translate(18, -14)">
+                    <circle r="10" fill="none" stroke="#43dce8" strokeWidth="1.25" />
+                    <line x1="12" y1="-12" x2="36" y2="-28" stroke="#43dce8" strokeWidth="1" />
+                    <text
+                      x="42"
+                      y="-26"
+                      fill="#f4f5f7"
+                      fontFamily="JetBrains Mono, monospace"
+                      fontSize="10.5"
+                      letterSpacing="1.2"
+                    >
+                      SHACKLETON RIM · 89.5° S
+                    </text>
+                  </g>
+
+                  <g transform="translate(-82, -52)">
+                    <circle r="4" fill="#f4f5f7" />
+                    <text
+                      x="-148"
+                      y="-62"
+                      fill="#94a3b8"
+                      fontFamily="JetBrains Mono, monospace"
+                      fontSize="10"
+                      letterSpacing="1.1"
+                    >
+                      DE GERLACHE · 88.5° S
+                    </text>
+                  </g>
+
+                  <g transform="translate(8, -132)">
+                    <circle r="4" fill="#60a5fa" />
+                    <text
+                      x="14"
+                      y="-130"
+                      fill="#93c5fd"
+                      fontFamily="JetBrains Mono, monospace"
+                      fontSize="10"
+                      letterSpacing="1.1"
+                    >
+                      MALAPERT MASSIF · 86.0° S
+                    </text>
+                  </g>
+                </g>
+
+                {/* 360° LOLA DEM Horizon Profile Curve Along Lower Band */}
+                <path
+                  d="M 48,418 L 95,412 L 145,398 L 195,405 L 250,388 L 305,376 L 355,392 L 410,382 L 465,368 L 520,379 L 575,396 L 630,389 L 690,404 L 752,414"
+                  fill="none"
+                  stroke="#43dce8"
+                  strokeWidth="1.6"
+                />
+                <line
+                  x1="48"
+                  y1="422"
+                  x2="752"
+                  y2="422"
+                  stroke="rgba(244, 245, 247, 0.14)"
+                  strokeWidth="1"
+                />
+
+                <g fontFamily="JetBrains Mono, monospace" fontSize="11" letterSpacing="1.4">
+                  <text x="48" y="54" fill="#43dce8">
+                    TELEMETRY // LRO LOLA DEM &amp; LROC WAC SOUTH POLE HORIZON
+                  </text>
+                  <text x="48" y="446" fill="#8a99ad">
+                    360° HORIZON VISOR · SOLAR AVAILABILITY · EARTH VISIBILITY
+                  </text>
+                </g>
+              </svg>
+
+              <div className="discover-visual-overlay">
+                <span className="visual-badge">84°S – 90°S SITE SELECTOR &amp; 360° VISOR</span>
+              </div>
+            </div>
+
+            <div className="discover-copy-col">
+              <div className="discover-index-line">
+                <span className="discover-index">02</span>
+                <span className="discover-index-Rule" aria-hidden="true" />
+                <span className="discover-label">MISSION CONTROL</span>
+              </div>
+
+              <h3 className="discover-title">02 — MISSION CONTROL</h3>
+
+              <p className="discover-description">
+                Analyze lunar terrain, solar availability and communication visibility to
+                evaluate potential landing sites.
+              </p>
+
+              <div className="discover-meta-notes">
+                <span>LRO LOLA DEM</span>
+                <span>·</span>
+                <span>SOLAR ELEVATION 1.54°</span>
+                <span>·</span>
+                <span>DTE VISIBILITY</span>
+              </div>
+
+              <button
+                type="button"
+                className="discover-action-link"
+                onClick={handleOpenMissionControl}
+              >
+                <span>LAUNCH MISSION CONTROL</span>
+                <span className="action-arrow" aria-hidden="true">→</span>
+              </button>
+            </div>
+          </article>
+        </div>
+
+        {/* Minimal Observatory Colophon */}
+        <footer className="observatory-colophon">
+          <span>LUNAV — LUNAR OBSERVATORY</span>
+          <span>89.5° S — LUNAR SOUTH POLE · LOLA DEM · JPL HORIZONS</span>
+        </footer>
+      </section>
+    </div>
   );
 }
