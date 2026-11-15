@@ -1825,10 +1825,16 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 }
 
 /* ==========================================================================
-   9. LUNAR OBSERVATORY — EXPLORE THE LUNAR SOUTH POLE (MissionLanding.jsx)
+   9. LUNAR OBSERVATORY — FULL-VIEWPORT 100VH LANDING (MissionLanding.jsx)
    ========================================================================== */
 
-/* Hide default shell topbar when on the Lunar Observatory landing page so the 100vh hero and discreet observatory header own the viewport */
+/* Lock shell to 100vh without vertical scroll when on the Lunar Observatory landing page */
+.shell:has(.lunar-observatory-landing) {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+
 .shell:has(.lunar-observatory-landing) > .topbar {
   display: none;
 }
@@ -1836,7 +1842,9 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .shell:has(.lunar-observatory-landing) > .landing-main {
   padding: 0;
   margin: 0;
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
   background-color: #080b10;
 }
 
@@ -1844,16 +1852,18 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  justify-content: flex-start;
-  min-height: 100vh;
+  justify-content: center;
+  height: 100vh;
+  max-height: 100vh;
   padding: 0;
+  overflow: hidden;
   background-color: #080b10;
 }
 
 @keyframes observatory-fade-up {
   from {
     opacity: 0;
-    transform: translateY(18px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
@@ -1887,13 +1897,15 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   justify-content: flex-start;
 }
 
-/* Root Observatory Container */
+/* Root Observatory Container — Strict 100vh, Zero Scroll */
 .lunar-observatory-landing {
   position: relative;
   width: 100%;
+  height: 100vh;
+  max-height: 100vh;
   background-color: #080b10;
   color: #f4f5f7;
-  overflow-x: hidden;
+  overflow: hidden;
   transition:
     opacity 0.42s cubic-bezier(0.4, 0, 0.2, 1),
     transform 0.42s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1906,14 +1918,11 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   pointer-events: none;
 }
 
-/* --------------------------------------------------------------------------
-   1. FULLSCREEN HERO SECTION (100VH)
-   -------------------------------------------------------------------------- */
 .observatory-hero {
   position: relative;
   width: 100%;
   height: 100vh;
-  min-height: 680px;
+  max-height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -1921,7 +1930,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   overflow: hidden;
 }
 
-/* Preserved 3D Moon + Earthrise WebGL Canvas */
+/* 3D Moon + Earthrise WebGL Canvas */
 .observatory-3d-stage {
   position: absolute;
   inset: 0;
@@ -1930,29 +1939,26 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   height: 100%;
 }
 
-/* Cinematic Atmospheric Vignette Blending the 3D Moon into #080B10 */
+/* Subtle Vignette for Readability Over the 3D Moon */
 .observatory-hero-vignette {
   position: absolute;
   inset: 0;
   z-index: 2;
   pointer-events: none;
   background:
-    radial-gradient(circle at 68% 58%, rgba(30, 58, 138, 0.14) 0%, rgba(8, 11, 16, 0.42) 62%, #080b10 95%),
-    linear-gradient(90deg, #080b10 0%, rgba(8, 11, 16, 0.84) 34%, rgba(8, 11, 16, 0.12) 66%, rgba(8, 11, 16, 0.48) 100%),
-    linear-gradient(180deg, rgba(8, 11, 16, 0.64) 0%, rgba(8, 11, 16, 0) 28%, rgba(8, 11, 16, 0.18) 76%, #080b10 100%);
+    radial-gradient(circle at 50% 48%, rgba(8, 11, 16, 0.16) 0%, rgba(8, 11, 16, 0.68) 88%),
+    linear-gradient(180deg, rgba(8, 11, 16, 0.65) 0%, rgba(8, 11, 16, 0.1) 45%, rgba(8, 11, 16, 0.72) 100%);
 }
 
-/* DISCREET OBSERVATORY HEADER */
+/* ULTRA-CLEAN HEADER: Only the LUNAR OBSERVATORY Brand Logo */
 .observatory-header {
   position: relative;
   z-index: 5;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   width: 100%;
-  max-width: 1480px;
-  margin: 0 auto;
-  padding: 28px 56px;
+  padding: 28px 32px 0;
 }
 
 .observatory-brand {
@@ -1981,205 +1987,60 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .observatory-brand-divider {
   width: 1px;
   height: 14px;
-  background-color: rgba(244, 245, 247, 0.18);
+  background-color: rgba(244, 245, 247, 0.22);
 }
 
 .observatory-brand-tag {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
-  letter-spacing: 0.2em;
-  color: #8a99ad;
+  letter-spacing: 0.22em;
+  color: #9ba8ba;
 }
 
-.observatory-nav {
-  display: flex;
-  align-items: center;
-  gap: 36px;
-}
-
-.observatory-nav-link {
-  position: relative;
-  padding: 6px 0;
-  font-family: 'Roboto', system-ui, -apple-system, sans-serif;
-  font-size: 13px;
-  font-weight: 400;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #c5cedb;
-  transition: color 0.22s ease;
-}
-
-.observatory-nav-link::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  height: 1px;
-  background-color: #43dce8;
-  transform: scaleX(0);
-  transform-origin: right;
-  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.observatory-nav-link:hover {
-  color: #f4f5f7;
-}
-
-.observatory-nav-link:hover::after {
-  transform: scaleX(1);
-  transform-origin: left;
-}
-
-/* SCIENTIFIC OBSERVATORY ANNOTATIONS (Delicate Lines & Coordinates) */
-.observatory-annotations {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none;
-  max-width: 1480px;
-  margin: 0 auto;
-}
-
-.obs-annotation {
-  position: absolute;
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  opacity: 0;
-  animation: observatory-fade-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.obs-annotation.is-earth {
-  top: 21%;
-  right: 11%;
-  animation-delay: 0.25s;
-}
-
-.obs-annotation.is-solar {
-  top: 46%;
-  right: 7%;
-  animation-delay: 0.38s;
-}
-
-.obs-annotation.is-pole {
-  bottom: 22%;
-  left: 54%;
-  animation-delay: 0.5s;
-}
-
-.obs-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background-color: rgba(244, 245, 247, 0.75);
-  flex-shrink: 0;
-}
-
-.obs-dot.is-cyan {
-  background-color: #43dce8;
-  box-shadow: 0 0 10px rgba(67, 220, 232, 0.65);
-}
-
-.obs-line {
-  width: 54px;
-  height: 1px;
-  background-color: rgba(244, 245, 247, 0.22);
-}
-
-.obs-line.is-short {
-  width: 36px;
-}
-
-.obs-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.obs-meta.is-right {
-  text-align: right;
-  align-items: flex-end;
-}
-
-.obs-coord {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  color: #f4f5f7;
-}
-
-.obs-detail {
-  font-family: 'Roboto', system-ui, sans-serif;
-  font-size: 11px;
-  letter-spacing: 0.03em;
-  color: #8a99ad;
-}
-
-/* HERO EDITORIAL COPY IN LEFT NEGATIVE SPACE */
+/* CENTERED HERO ACTION */
 .observatory-hero-body {
   position: relative;
   z-index: 4;
   width: 100%;
-  max-width: 1480px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 0 56px;
+  padding: 0 32px 48px;
   display: flex;
   align-items: center;
+  justify-content: center;
   flex: 1;
 }
 
 .observatory-hero-copy {
-  max-width: 610px;
+  max-width: 780px;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-}
-
-.observatory-eyebrow {
-  margin: 0 0 18px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10.5px;
-  font-weight: 500;
-  letter-spacing: 0.22em;
-  color: #43dce8;
-  opacity: 0;
-  animation: observatory-fade-up 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.08s forwards;
+  align-items: center;
+  text-align: center;
 }
 
 .observatory-headline {
-  margin: 0 0 22px;
+  margin: 0 0 36px;
   font-family: 'Exo 2', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: clamp(36px, 4.4vw, 60px);
+  font-size: clamp(34px, 4.5vw, 62px);
   font-weight: 600;
-  line-height: 1.08;
-  letter-spacing: -0.015em;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
   color: #f4f5f7;
+  text-shadow: 0 4px 32px rgba(0, 0, 0, 0.72);
   opacity: 0;
-  animation: observatory-fade-up 0.82s cubic-bezier(0.16, 1, 0.3, 1) 0.16s forwards;
+  animation: observatory-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
 }
 
-.observatory-subtitle {
-  margin: 0 0 38px;
-  max-width: 50ch;
-  font-family: 'Roboto', system-ui, -apple-system, sans-serif;
-  font-size: clamp(15px, 1.15vw, 17px);
-  font-weight: 300;
-  line-height: 1.68;
-  color: #9ba8ba;
-  opacity: 0;
-  animation: observatory-fade-up 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.24s forwards;
-}
-
-/* TWO PRIMARY HERO BUTTONS */
+/* TWO DIRECT CENTRAL BUTTONS */
 .observatory-cta-row {
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 18px;
   opacity: 0;
-  animation: observatory-fade-up 0.88s cubic-bezier(0.16, 1, 0.3, 1) 0.32s forwards;
+  animation: observatory-fade-up 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.22s forwards;
 }
 
 .observatory-btn {
@@ -2187,28 +2048,30 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 15px 24px;
+  min-width: 265px;
+  padding: 16px 28px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11.5px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
   letter-spacing: 0.14em;
   border-radius: 2px;
   transition:
-    background-color 0.24s ease,
-    border-color 0.24s ease,
-    color 0.24s ease,
-    transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+    background-color 0.22s ease,
+    border-color 0.22s ease,
+    color 0.22s ease,
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .observatory-btn .btn-bracket {
-  opacity: 0.65;
-  transition: transform 0.24s ease, opacity 0.24s ease;
+  opacity: 0.7;
+  transition: opacity 0.22s ease;
 }
 
 .observatory-btn.is-primary {
-  background-color: rgba(67, 220, 232, 0.12);
-  border: 1px solid rgba(67, 220, 232, 0.58);
+  background-color: rgba(67, 220, 232, 0.14);
+  border: 1px solid rgba(67, 220, 232, 0.65);
   color: #f4f5f7;
+  backdrop-filter: blur(8px);
 }
 
 .observatory-btn.is-primary .btn-bracket {
@@ -2228,18 +2091,18 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 }
 
 .observatory-btn.is-secondary {
-  background-color: rgba(21, 26, 30, 0.65);
-  border: 1px solid rgba(244, 245, 247, 0.22);
+  background-color: rgba(15, 20, 26, 0.72);
+  border: 1px solid rgba(244, 245, 247, 0.28);
   color: #f4f5f7;
   backdrop-filter: blur(8px);
 }
 
 .observatory-btn.is-secondary .btn-bracket {
-  color: #8a99ad;
+  color: #9ba8ba;
 }
 
 .observatory-btn.is-secondary:hover {
-  background-color: rgba(244, 245, 247, 0.08);
+  background-color: rgba(244, 245, 247, 0.1);
   border-color: #43dce8;
   color: #f4f5f7;
   transform: translateY(-2px);
@@ -2250,360 +2113,20 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   opacity: 1;
 }
 
-/* HERO FOOTER & SCROLL TO DISCOVER INDICATOR */
-.observatory-hero-footer {
-  position: relative;
-  z-index: 4;
-  width: 100%;
-  max-width: 1480px;
-  margin: 0 auto;
-  padding: 0 56px 26px;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: end;
-}
-
-.hero-footer-coords {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  color: #7c8a9e;
-}
-
-.hero-footer-coords.is-right {
-  justify-content: flex-end;
-}
-
-.hero-footer-coords .coord-sep {
-  color: rgba(67, 220, 232, 0.55);
-}
-
-.observatory-scroll-cue {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  color: #9ba8ba;
-  transition: color 0.22s ease;
-}
-
-.observatory-scroll-cue:hover {
-  color: #43dce8;
-}
-
-.scroll-cue-label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.24em;
-}
-
-.scroll-cue-line {
-  width: 1px;
-  height: 28px;
-  background: linear-gradient(180deg, #43dce8 0%, rgba(67, 220, 232, 0.08) 100%);
-}
-
-/* --------------------------------------------------------------------------
-   2. LOWER EDITORIAL SECTION — DISCOVER LUNAV
-   -------------------------------------------------------------------------- */
-.observatory-discover-section {
-  position: relative;
-  z-index: 4;
-  width: 100%;
-  max-width: 1480px;
-  margin: 0 auto;
-  padding: 112px 56px 88px;
-  background-color: #080b10;
-  border-top: 1px solid rgba(244, 245, 247, 0.08);
-}
-
-.discover-section-header {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 72px;
-}
-
-.discover-kicker {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.22em;
-  color: #43dce8;
-}
-
-.discover-heading {
-  margin: 0;
-  font-family: 'Exo 2', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: clamp(28px, 3vw, 40px);
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  color: #f4f5f7;
-}
-
-.discover-editorial-list {
-  display: flex;
-  flex-direction: column;
-  gap: 104px;
-}
-
-/* Asymmetric Large Editorial Feature Row */
-.discover-feature-row {
-  display: grid;
-  grid-template-columns: 1.35fr 0.9fr;
-  align-items: center;
-  gap: 64px;
-}
-
-.discover-feature-row.is-reversed {
-  grid-template-columns: 0.9fr 1.35fr;
-}
-
-.discover-feature-row.is-reversed .discover-visual-stage {
-  order: 2;
-}
-
-.discover-feature-row.is-reversed .discover-copy-col {
-  order: 1;
-}
-
-/* Large Visual Stage (#151A1E Secondary Surface) */
-.discover-visual-stage {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9.6;
-  background-color: #151a1e;
-  border: 1px solid rgba(244, 245, 247, 0.1);
-  overflow: hidden;
-  cursor: pointer;
-  transition:
-    border-color 0.32s ease,
-    transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.discover-visual-stage:hover {
-  border-color: rgba(67, 220, 232, 0.48);
-  transform: translateY(-3px);
-}
-
-.discover-wac-backdrop {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center 85%;
-  filter: grayscale(1) contrast(1.22) brightness(0.55);
-  transform: scale(1.03);
-  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.discover-visual-stage:hover .discover-wac-backdrop {
-  transform: scale(1.07);
-}
-
-.discover-render-svg {
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-.discover-visual-overlay {
-  position: absolute;
-  top: 20px;
-  right: 22px;
-  z-index: 3;
-  pointer-events: none;
-}
-
-.visual-badge {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.16em;
-  color: #9ba8ba;
-}
-
-/* Editorial Copy Column */
-.discover-copy-col {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  max-width: 460px;
-}
-
-.discover-index-line {
-  display: inline-flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 18px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.2em;
-}
-
-.discover-index {
-  color: #43dce8;
-  font-weight: 600;
-}
-
-.discover-index-Rule {
-  width: 36px;
-  height: 1px;
-  background-color: rgba(244, 245, 247, 0.2);
-}
-
-.discover-label {
-  color: #8a99ad;
-}
-
-.discover-title {
-  margin: 0 0 18px;
-  font-family: 'Exo 2', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: clamp(26px, 2.5vw, 34px);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: #f4f5f7;
-}
-
-.discover-description {
-  margin: 0 0 24px;
-  font-family: 'Roboto', system-ui, -apple-system, sans-serif;
-  font-size: 16px;
-  font-weight: 300;
-  line-height: 1.7;
-  color: #9ba8ba;
-}
-
-.discover-meta-notes {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 32px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  color: #7c8a9e;
-}
-
-.discover-action-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(67, 220, 232, 0.5);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11.5px;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  color: #f4f5f7;
-  transition: color 0.22s ease, border-color 0.22s ease;
-}
-
-.discover-action-link .action-arrow {
-  color: #43dce8;
-  transition: transform 0.22s ease;
-}
-
-.discover-action-link:hover {
-  color: #43dce8;
-  border-bottom-color: #43dce8;
-}
-
-.discover-action-link:hover .action-arrow {
-  transform: translateX(5px);
-}
-
-/* Minimal Observatory Colophon */
-.observatory-colophon {
-  margin-top: 96px;
-  padding-top: 28px;
-  border-top: 1px solid rgba(244, 245, 247, 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  color: #6c7a8e;
-}
-
-/* --------------------------------------------------------------------------
-   RESPONSIVE BREAKPOINTS
-   -------------------------------------------------------------------------- */
-@media (max-width: 1080px) {
-  .observatory-header {
-    padding: 24px 32px;
-  }
-  .observatory-hero-body {
-    padding: 0 32px;
-  }
-  .observatory-hero-footer {
-    padding: 0 32px 24px;
-  }
-  .obs-annotation.is-solar {
-    display: none;
-  }
-  .observatory-discover-section {
-    padding: 80px 32px 64px;
-  }
-  .discover-feature-row,
-  .discover-feature-row.is-reversed {
-    grid-template-columns: 1fr;
-    gap: 32px;
-  }
-  .discover-feature-row.is-reversed .discover-visual-stage {
-    order: 1;
-  }
-  .discover-feature-row.is-reversed .discover-copy-col {
-    order: 2;
-  }
-  .discover-copy-col {
-    max-width: 100%;
-  }
-}
-
 @media (max-width: 720px) {
   .observatory-header {
-    padding: 20px;
-  }
-  .observatory-brand-divider,
-  .observatory-brand-tag {
-    display: none;
-  }
-  .observatory-nav {
-    gap: 20px;
-  }
-  .observatory-annotations {
-    display: none;
+    padding: 20px 20px 0;
   }
   .observatory-hero-body {
-    padding: 0 20px;
+    padding: 0 20px 32px;
   }
   .observatory-cta-row {
     flex-direction: column;
     align-items: stretch;
     width: 100%;
+    max-width: 340px;
   }
   .observatory-btn {
     width: 100%;
-  }
-  .observatory-hero-footer {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    padding: 0 20px 20px;
-  }
-  .hero-footer-coords {
-    display: none;
-  }
-  .observatory-discover-section {
-    padding: 64px 20px 48px;
-  }
-  .discover-editorial-list {
-    gap: 64px;
   }
 }
