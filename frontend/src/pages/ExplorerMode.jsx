@@ -16,6 +16,7 @@ import TacticalTelemetry from '../components/lunar/TacticalTelemetry.jsx';
 import EphemerisTimeline from '../components/lunar/EphemerisTimeline.jsx';
 import SiteOverlaySelector from '../components/lunar/SiteOverlaySelector.jsx';
 import LunarStreetView from '../components/lunar/LunarStreetView.jsx';
+import QuickmapTerrainView from '../components/lunar/QuickmapTerrainView.jsx';
 import { getHorizonData, CANDIDATE_SITES_CATALOG } from '../services/horizonsService.js';
 import {
   evaluateSiteTelemetry,
@@ -61,12 +62,12 @@ export default function ExplorerMode({
   // State: Temporal offset (in hours from mission epoch)
   const [hoursOffset, setHoursOffset] = useState(0);
 
-  // Fetch Primary Site Horizon Data
+  // Fetch Primary Site Horizon Data (or synthesize coherent latitude-based LOLA profile for custom coordinates)
   useEffect(() => {
     let cancelled = false;
     setPrimaryState({ loading: true, data: null });
 
-    getHorizonData(primaryId).then((data) => {
+    getHorizonData(primaryId, activeSite).then((data) => {
       if (!cancelled) {
         setPrimaryState({ loading: false, data });
       }
@@ -75,7 +76,7 @@ export default function ExplorerMode({
     return () => {
       cancelled = true;
     };
-  }, [primaryId]);
+  }, [primaryId, activeSite]);
 
   // Fetch Alternative Overlay Site Horizon Data
   useEffect(() => {
@@ -159,7 +160,7 @@ export default function ExplorerMode({
           </button>
 
           {/* Mode Tabs */}
-          <div className="explorer-view-modes-group" role="tablist" aria-label="Visualizer Mode">
+          <div className="explorer-view-modes-group" role="tablist" aria-label="360° Horizon Analysis Mode">
             <button
               type="button"
               role="tab"
@@ -168,7 +169,7 @@ export default function ExplorerMode({
               onClick={() => setViewMode('streetview')}
             >
               <Eye size={13} />
-              <span>3D STREET VIEW</span>
+              <span>360° SURFACE VISOR</span>
             </button>
             <button
               type="button"
@@ -178,7 +179,17 @@ export default function ExplorerMode({
               onClick={() => setViewMode('chart')}
             >
               <Activity size={13} />
-              <span>2D HORIZON PROFILE</span>
+              <span>360° LOLA DEM ELEVATION</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={viewMode === 'quickmap'}
+              className={`mode-tab-btn ${viewMode === 'quickmap' ? 'is-active' : ''}`}
+              onClick={() => setViewMode('quickmap')}
+            >
+              <Compass size={13} />
+              <span>LROC WAC 2D POLAR MAP</span>
             </button>
             <button
               type="button"
@@ -188,14 +199,14 @@ export default function ExplorerMode({
               onClick={() => setViewMode('dual')}
             >
               <Layers size={13} />
-              <span>DUAL SIMULATOR</span>
+              <span>360° SYNCHRONIZED VIEW</span>
             </button>
           </div>
 
           <div className="profile-indicator-tag">
             <span className="tag-pulse" />
             <span className="tag-text">
-              MODE: {profile.toUpperCase()} · JPL HORIZONS / LOLA DEM
+              MODE: {profile.toUpperCase()} · LRO LOLA DEM / JPL HORIZONS
             </span>
           </div>
         </div>
@@ -203,34 +214,33 @@ export default function ExplorerMode({
         <div className="header-editorial-title-row">
           <div className="editorial-title-col">
             <div className="editorial-kicker">
-              <span>LUNAR SOUTH POLE // 360° EPHEMERIS & HORIZON TELEMETRY</span>
+              <span>LUNAR SOUTH POLE // LROC WAC & LRO LOLA TOPOGRAPHIC TELEMETRY</span>
             </div>
             <h1 id="explorer-main-title" className="editorial-headline">
               {effectivePrimarySite.name}
             </h1>
-            <p className="editorial-subhead">
-              First-person 1.8m astronaut perspective, high-resolution LOLA topographical horizon clearance, real-time Sun & Earth vectors, and schedule contingency analysis.
-            </p>
           </div>
 
-          <div className="editorial-quick-coords">
-            <div className="quick-coord-item">
-              <span className="coord-label">LAT</span>
-              <span className="coord-val">
-                {Math.abs(latitude).toFixed(3)}° {latitude < 0 ? 'S' : 'N'}
-              </span>
+          {viewMode !== 'quickmap' && (
+            <div className="editorial-quick-coords">
+              <div className="quick-coord-item">
+                <span className="coord-label">LAT</span>
+                <span className="coord-val">
+                  {Math.abs(latitude).toFixed(3)}° {latitude < 0 ? 'S' : 'N'}
+                </span>
+              </div>
+              <div className="quick-coord-item">
+                <span className="coord-label">LON</span>
+                <span className="coord-val">
+                  {Math.abs(longitude).toFixed(3)}° {longitude < 0 ? 'W' : 'E'}
+                </span>
+              </div>
+              <div className="quick-coord-item">
+                <span className="coord-label">ELEV</span>
+                <span className="coord-val">+{elevation.toLocaleString()} M</span>
+              </div>
             </div>
-            <div className="quick-coord-item">
-              <span className="coord-label">LON</span>
-              <span className="coord-val">
-                {Math.abs(longitude).toFixed(3)}° {longitude < 0 ? 'W' : 'E'}
-              </span>
-            </div>
-            <div className="quick-coord-item">
-              <span className="coord-label">ELEV</span>
-              <span className="coord-val">+{elevation.toLocaleString()} M</span>
-            </div>
-          </div>
+          )}
         </div>
       </header>
 
@@ -286,10 +296,34 @@ export default function ExplorerMode({
             </>
           )}
 
-          {/* Tactical Telemetry Panel (Astronaut Monospace Channels) */}
+          {/* View Mode: Quickmap Terrain & Vector View (or Synchronized View) */}
+          {(viewMode === 'quickmap' || viewMode === 'dual') && (
+            <>
+              <QuickmapTerrainView
+                site={effectivePrimarySite}
+                horizonProfile={primaryProfile}
+                telemetry={primaryTelemetry}
+                onSelectSite={handleSelectSiteInternal}
+              />
+
+              {viewMode === 'quickmap' && (
+                <EphemerisTimeline
+                  hoursOffset={hoursOffset}
+                  onChangeHoursOffset={setHoursOffset}
+                  baseDate={DEFAULT_MISSION_EPOCH}
+                />
+              )}
+            </>
+          )}
+
+          {/* Tactical Telemetry Panel (Astronaut Monospace Channels + Consolidated Alerts) */}
           <TacticalTelemetry
+            site={effectivePrimarySite}
+            horizonProfile={primaryProfile}
+            hoursOffset={hoursOffset}
             telemetry={primaryTelemetry}
             profile={profile}
+            hideVectorAngles={viewMode === 'quickmap' || viewMode === 'dual'}
           />
         </main>
       ) : (

@@ -37,6 +37,7 @@ import {
   createHorizonRidgeMesh,
   createHorizonContourLine,
   createLocalLunarGround,
+  create3DRouteLine,
 } from './lunarTerrain.js';
 
 import {
@@ -45,8 +46,256 @@ import {
   projectToScreen,
 } from './lunarCelestial.js';
 
+import {
+  evaluateMissionFeasibility,
+  generateSmartWarnings,
+  recommendOptimalAlternative,
+} from '../../../services/recommendationEngine.js';
+
 import { CANDIDATE_SITES_CATALOG } from '../../../services/horizonsService.js';
 import '../../../styles/streetview.css';
+
+// Preset Timeline Contingencies (+3d, +7d, +14d)
+const TIMELINE_PRESETS = [
+  { label: 'T+0 NOMINAL', hours: 0 },
+  { label: '+3d (+72h)', hours: 72 },
+  { label: '+7d (+168h)', hours: 168 },
+  { label: '+14d (+336h)', hours: 336 },
+];
+
+/**
+ * Isolated 60 FPS Timeline Bar component.
+ * Separates high-frequency timeOffset/epoch scrubber state from heavy 3D/chart parent components,
+ * driving WebGL vectors imperatively at 60 FPS while debouncing/throttling heavy React state commits.
+ */
+const StreetViewTimelineBar = React.memo(function StreetViewTimelineBar({
+  externalHours = 0,
+  baseDate = DEFAULT_MISSION_EPOCH,
+  onFastTick,
+  onCommitHours,
+}) {
+  const [localHours, setLocalHours] = useState(externalHours);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(6); // 1 = 1h/s, 6 = 6h/s, 24 = 24h/s, 72 = 72h/s
+
+  // Refs for 60 FPS animation loop & timer cleanup without memory leaks or dependency churn
+  const hoursRef = useRef(externalHours);
+  const speedRef = useRef(playbackSpeed);
+  const isPlayingRef = useRef(isPlaying);
+  const rafRef = useRef(null);
+  const lastFrameTimeRef = useRef(null);
+  const debounceTimerRef = useRef(null);
+  const lastCommitTimeRef = useRef(0);
+  const onFastTickRef = useRef(onFastTick);
+  const onCommitHoursRef = useRef(onCommitHours);
+
+  useEffect(() => {
+    onFastTickRef.current = onFastTick;
+    onCommitHoursRef.current = onCommitHours;
+  }, [onFastTick, onCommitHours]);
+
+  useEffect(() => {
+    speedRef.current = playbackSpeed;
+  }, [playbackSpeed]);
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
+
+  // Sync external hours when not actively playing
+  useEffect(() => {
+    if (!isPlayingRef.current && Math.abs(hoursRef.current - externalHours) > 0.05) {
+      hoursRef.current = externalHours;
+      setLocalHours(externalHours);
+    }
+  }, [externalHours]);
+
+  // Debounced / Throttled commit helper for heavy parent components
+  const scheduleParentCommit = useCallback((nextHours, immediate = false) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+
+    if (immediate) {
+      lastCommitTimeRef.current = performance.now();
+      onCommitHoursRef.current?.(nextHours);
+      return;
+    }
+
+    const now = performance.now();
+    // During playback, throttle heavy React state commits to ~220ms while 3D WebGL runs at 60 FPS
+    if (isPlayingRef.current && now - lastCommitTimeRef.current >= 220) {
+      lastCommitTimeRef.current = now;
+      onCommitHoursRef.current?.(nextHours);
+      return;
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      lastCommitTimeRef.current = performance.now();
+      onCommitHoursRef.current?.(nextHours);
+      debounceTimerRef.current = null;
+    }, 120);
+  }, []);
+
+  // Controlled 60 FPS requestAnimationFrame playback loop via useRef
+  useEffect(() => {
+    if (!isPlaying) {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      lastFrameTimeRef.current = null;
+      return;
+    }
+
+    lastFrameTimeRef.current = performance.now();
+
+    const tick = (now) => {
+      const dtSec = Math.min(0.1, Math.max(0, (now - (lastFrameTimeRef.current ?? now)) / 1000.0));
+      lastFrameTimeRef.current = now;
+
+      // Exact hours progression based on selected speed ("6 HR / SEC" = 6 hours per real second)
+      const nextHours = (hoursRef.current + dtSec * speedRef.current) % LUNAR_SYNODIC_HOURS;
+      const roundedHours = Number(nextHours.toFixed(2));
+      hoursRef.current = nextHours;
+
+      // 1. Imperative 60 FPS update to 3D celestial vectors (zero parent re-render)
+      onFastTickRef.current?.(roundedHours);
+
+      // 2. Update isolated timeline scrubber UI state
+      setLocalHours(roundedHours);
+
+      // 3. Throttled/debounced update to heavy parent telemetry & charts
+      scheduleParentCommit(roundedHours, false);
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+  }, [isPlaying, scheduleParentCommit]);
+
+  // Cleanup all timers on unmount
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleTogglePlay = () => {
+    setIsPlaying((prev) => {
+      const next = !prev;
+      if (!next) {
+        // Flush final hours to parent immediately when pausing
+        scheduleParentCommit(Number(hoursRef.current.toFixed(2)), true);
+      }
+      return next;
+    });
+  };
+
+  const handleJumpToHours = (targetHours, immediate = true) => {
+    setIsPlaying(false);
+    hoursRef.current = targetHours;
+    setLocalHours(targetHours);
+    onFastTickRef.current?.(targetHours);
+    scheduleParentCommit(targetHours, immediate);
+  };
+
+  const baseEpochMs = useMemo(() => new Date(baseDate).getTime(), [baseDate]);
+  const currentEpochMs = baseEpochMs + localHours * 3600 * 1000;
+  const formattedUtc = new Date(currentEpochMs).toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+
+  return (
+    <div className="streetview-timeline-bar" aria-label="Interactive Ephemeris Time Scrubber">
+      <div className="timeline-ctrl-row">
+        <div className="timeline-playback-group">
+          <button
+            type="button"
+            className="playback-btn"
+            onClick={handleTogglePlay}
+            title={isPlaying ? 'Pause Simulation' : 'Play Ephemeris Propagation'}
+          >
+            {isPlaying ? <Pause size={14} /> : <Play size={14} />}
+          </button>
+          <button
+            type="button"
+            className="playback-btn"
+            onClick={() => handleJumpToHours(0, true)}
+            title="Reset Timeline to T+0"
+          >
+            <RotateCcw size={14} />
+          </button>
+          <select
+            className="playback-speed-select"
+            value={playbackSpeed}
+            onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
+            aria-label="Simulation Playback Speed"
+          >
+            <option value="1">1 HR / SEC</option>
+            <option value="6">6 HR / SEC</option>
+            <option value="24">24 HR / SEC (1D/S)</option>
+            <option value="72">72 HR / SEC (3D/S)</option>
+          </select>
+        </div>
+
+        {/* Contingency Presets (+3d, +7d, +14d) */}
+        <div className="timeline-preset-pills" role="group" aria-label="Schedule Contingency Presets">
+          {TIMELINE_PRESETS.map((p) => {
+            const isActive = Math.abs(localHours - p.hours) < 0.8;
+            return (
+              <button
+                key={p.label}
+                type="button"
+                className={`preset-pill ${isActive ? 'is-active' : ''}`}
+                onClick={() => handleJumpToHours(p.hours, true)}
+              >
+                {p.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Range Scrubber Slider (60 FPS local scrub + debounced parent commit) */}
+      <input
+        type="range"
+        className="timeline-slider-track"
+        min="0"
+        max={Number(LUNAR_SYNODIC_HOURS.toFixed(1))}
+        step="0.25"
+        value={localHours}
+        onChange={(e) => {
+          const val = Number(e.target.value);
+          handleJumpToHours(val, false);
+        }}
+        onPointerUp={() => scheduleParentCommit(Number(hoursRef.current.toFixed(2)), true)}
+        onKeyUp={() => scheduleParentCommit(Number(hoursRef.current.toFixed(2)), true)}
+        aria-label="Scrub Mission Timeline"
+      />
+
+      <div className="timeline-footer-row">
+        <span>MISSION EPOCH: <b>{formattedUtc}</b></span>
+        <span>
+          CYCLE PROGRESS: <b>+{(localHours / 24.0).toFixed(1)}d ({localHours.toFixed(1)}h) / {((localHours / LUNAR_SYNODIC_HOURS) * 100).toFixed(1)}% LUNAR SYNODIC DAY</b>
+        </span>
+      </div>
+    </div>
+  );
+});
 
 export default function LunarStreetView({
   site = null,
@@ -59,16 +308,18 @@ export default function LunarStreetView({
   const mountRef = useRef(null);
   const shellRef = useRef(null);
 
-  // Simulation timeline state
+  // Committed simulation timeline state (debounced/throttled from 60 FPS scrubber)
   const [internalHours, setInternalHours] = useState(hoursOffset);
   const activeHours = onChangeHoursOffset ? hoursOffset : internalHours;
   const setHours = onChangeHoursOffset || setInternalHours;
 
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState(6); // 1 = 1x, 6 = 6hr/s, 24 = 24hr/s
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showLolaContour, setShowLolaContour] = useState(true);
   const [isAutoPanning, setIsAutoPanning] = useState(false);
+  const isAutoPanningRef = useRef(isAutoPanning);
+  useEffect(() => {
+    isAutoPanningRef.current = isAutoPanning;
+  }, [isAutoPanning]);
 
   // Camera orientation state (degrees)
   // Yaw: 0° = North (-Z), 90° = East (+X), 180° = South (+Z), 270° = West (-X)
@@ -76,14 +327,17 @@ export default function LunarStreetView({
   const [cameraState, setCameraState] = useState({ yaw: 74, pitch: 4, fov: 70 });
   const targetCamRef = useRef({ yaw: 74, pitch: 4, fov: 70 });
   const liveCamRef = useRef({ yaw: 74, pitch: 4, fov: 70 });
+  const lastCamStateRef = useRef({ yaw: 74, pitch: 4, fov: 70 });
   const isDraggingRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0, yaw: 0, pitch: 0 });
 
-  // On-screen projected celestial markers
+  // On-screen projected celestial & route callout markers
   const [screenTargets, setScreenTargets] = useState({
     sun: { x: 0, y: 0, inFront: false, inView: false, angleDeg: 0 },
     earth: { x: 0, y: 0, inFront: false, inView: false, angleDeg: 0 },
+    route: { x: 0, y: 0, inFront: false, inView: false, angleDeg: 0 },
   });
+  const lastScreenTargetsRef = useRef(null);
 
   // Reference to 3D scene elements
   const threeRef = useRef({
@@ -93,6 +347,7 @@ export default function LunarStreetView({
     celestial: null,
     horizonMesh: null,
     contourLine: null,
+    routeLine: null,
     beaconLed: null,
     animFrame: null,
   });
@@ -107,14 +362,46 @@ export default function LunarStreetView({
     elevation: 4218,
   };
 
-  const latitude = Number(activeSite.lat ?? activeSite.latitude ?? -89.54);
-  const longitude = Number(activeSite.lon ?? activeSite.longitude ?? 0.0);
-  const elevation = Number(activeSite.elevation ?? activeSite.elevationMeters ?? 4218);
-
-  // Real-time Ephemeris Evaluation
+  // Real-time Ephemeris Evaluation (on committed hours)
   const telemetry = useMemo(() => {
     return evaluateSiteTelemetry(activeSite, horizonProfile, activeHours, new Date(baseDate));
   }, [activeSite, horizonProfile, activeHours, baseDate]);
+
+  // Spatial AI Route Recommendation (runs only on committed hours, never on 60 FPS micro-ticks)
+  const recommendation = useMemo(() => {
+    return recommendOptimalAlternative(activeSite, horizonProfile, activeHours, 336, new Date(baseDate));
+  }, [activeSite, horizonProfile, activeHours, baseDate]);
+
+  // Imperative 60 FPS handler for updating Three.js Sun & Earth vectors without React re-renders
+  const handleFastTick = useCallback(
+    (fastHours) => {
+      const { celestial } = threeRef.current;
+      if (!celestial) return;
+      const fastTelemetry = evaluateSiteTelemetry(activeSite, horizonProfile, fastHours, new Date(baseDate));
+      updateCelestialVectors(
+        celestial,
+        fastTelemetry.sun,
+        fastTelemetry.earth,
+        fastTelemetry.sun.clearance,
+        fastTelemetry.earth.clearance,
+        1400
+      );
+    },
+    [activeSite, horizonProfile, baseDate]
+  );
+
+  const routeTargetVecRef = useRef(new THREE.Vector3(0, 20, -2400));
+  useEffect(() => {
+    if (!recommendation) return;
+    const azRad = (recommendation.bearing * Math.PI) / 180.0;
+    const elevDeg = recommendation.horizonCrestDeg ?? 1.5;
+    const elevRad = (elevDeg * Math.PI) / 180.0;
+    const r = 2400;
+    const x = r * Math.sin(azRad);
+    const y = 1.8 + r * Math.tan(elevRad) + 8.0;
+    const z = -r * Math.cos(azRad);
+    routeTargetVecRef.current.set(x, y, z);
+  }, [recommendation]);
 
   const sunData = telemetry.sun;
   const earthData = telemetry.earth;
@@ -225,14 +512,37 @@ export default function LunarStreetView({
     threeRef.current.contourLine = contourLine;
   }, [horizonProfile, showLolaContour]);
 
+  // Update 3D Traverse Route Line along recommended ridge bearing
+  useEffect(() => {
+    const { scene } = threeRef.current;
+    if (!scene) return;
+
+    if (threeRef.current.routeLine) {
+      scene.remove(threeRef.current.routeLine);
+      threeRef.current.routeLine.geometry?.dispose();
+      threeRef.current.routeLine.material?.dispose();
+      threeRef.current.routeLine = null;
+    }
+
+    if (recommendation && Number.isFinite(recommendation.bearing)) {
+      const routeLine = create3DRouteLine(recommendation.bearing, 140);
+      routeLine.visible = showLolaContour;
+      scene.add(routeLine);
+      threeRef.current.routeLine = routeLine;
+    }
+  }, [recommendation, showLolaContour]);
+
   // Toggle LOLA Contour visibility
   useEffect(() => {
     if (threeRef.current.contourLine) {
       threeRef.current.contourLine.visible = showLolaContour;
     }
+    if (threeRef.current.routeLine) {
+      threeRef.current.routeLine.visible = showLolaContour;
+    }
   }, [showLolaContour]);
 
-  // Main Animation Render Loop
+  // Main Animation Render Loop (Controlled via useRef, zero dependency churn)
   useEffect(() => {
     const { scene, camera, renderer, celestial, beaconLed } = threeRef.current;
     if (!scene || !camera || !renderer || !celestial) return;
@@ -240,11 +550,11 @@ export default function LunarStreetView({
     let lastTime = performance.now();
 
     const renderLoop = (time) => {
-      const deltaSec = (time - lastTime) / 1000.0;
+      const deltaSec = Math.min(0.1, (time - lastTime) / 1000.0);
       lastTime = time;
 
       // 1. Interactive Camera Damping & Auto-Panning
-      if (isAutoPanning) {
+      if (isAutoPanningRef.current) {
         targetCamRef.current.yaw = normalizeAngle360(targetCamRef.current.yaw + deltaSec * 3.5);
       }
 
@@ -261,7 +571,7 @@ export default function LunarStreetView({
       cur.pitch += (tgt.pitch - cur.pitch) * 0.14;
       cur.fov += (tgt.fov - cur.fov) * 0.14;
 
-      if (camera.fov !== cur.fov) {
+      if (Math.abs(camera.fov - cur.fov) > 0.05) {
         camera.fov = cur.fov;
         camera.updateProjectionMatrix();
       }
@@ -284,7 +594,7 @@ export default function LunarStreetView({
         beaconLed.color.setRGB(0.36 + pulse * 0.6, 0.88, 0.9 + pulse * 0.1);
       }
 
-      // 3. Project 3D Celestial Targets to Screen for HUD
+      // 3. Project 3D Celestial Targets to Screen for HUD (update React state only when delta > 0.5px)
       const width = renderer.domElement.clientWidth || 800;
       const height = renderer.domElement.clientHeight || 520;
 
@@ -293,16 +603,41 @@ export default function LunarStreetView({
 
       const sunProj = projectToScreen(sunPos, camera, width, height);
       const earthProj = projectToScreen(earthPos, camera, width, height);
+      const routeProj = projectToScreen(routeTargetVecRef.current, camera, width, height);
 
-      setScreenTargets({ sun: sunProj, earth: earthProj });
+      const prevTargets = lastScreenTargetsRef.current;
+      const hasTargetsMoved =
+        !prevTargets ||
+        prevTargets.sun.inView !== sunProj.inView ||
+        prevTargets.earth.inView !== earthProj.inView ||
+        prevTargets.route.inView !== routeProj.inView ||
+        Math.abs(prevTargets.sun.x - sunProj.x) > 0.6 ||
+        Math.abs(prevTargets.sun.y - sunProj.y) > 0.6 ||
+        Math.abs(prevTargets.earth.x - earthProj.x) > 0.6 ||
+        Math.abs(prevTargets.earth.y - earthProj.y) > 0.6 ||
+        Math.abs(prevTargets.route.x - routeProj.x) > 0.6 ||
+        Math.abs(prevTargets.route.y - routeProj.y) > 0.6;
 
-      // Update camera readout state throttled
-      if (Math.abs(cameraState.yaw - cur.yaw) > 0.4 || Math.abs(cameraState.pitch - cur.pitch) > 0.4) {
-        setCameraState({
+      if (hasTargetsMoved) {
+        const nextTargets = { sun: sunProj, earth: earthProj, route: routeProj };
+        lastScreenTargetsRef.current = nextTargets;
+        setScreenTargets(nextTargets);
+      }
+
+      // Update camera readout state throttled via ref comparison
+      const lastCam = lastCamStateRef.current;
+      if (
+        Math.abs(lastCam.yaw - cur.yaw) > 0.4 ||
+        Math.abs(lastCam.pitch - cur.pitch) > 0.4 ||
+        Math.abs(lastCam.fov - cur.fov) > 0.4
+      ) {
+        const nextCam = {
           yaw: Number(cur.yaw.toFixed(1)),
           pitch: Number(cur.pitch.toFixed(1)),
           fov: Number(cur.fov.toFixed(1)),
-        });
+        };
+        lastCamStateRef.current = nextCam;
+        setCameraState(nextCam);
       }
 
       // Render Three.js Scene
@@ -316,11 +651,12 @@ export default function LunarStreetView({
     return () => {
       if (threeRef.current.animFrame) {
         cancelAnimationFrame(threeRef.current.animFrame);
+        threeRef.current.animFrame = null;
       }
     };
-  }, [isAutoPanning, cameraState.yaw, cameraState.pitch]);
+  }, []);
 
-  // Update Ephemeris Vectors in 3D Scene when telemetry changes
+  // Update Ephemeris Vectors in 3D Scene when committed telemetry changes
   useEffect(() => {
     const { celestial } = threeRef.current;
     if (!celestial || !sunData || !earthData) return;
@@ -334,26 +670,6 @@ export default function LunarStreetView({
       1400
     );
   }, [sunData, earthData]);
-
-  // Timeline Playback Animation
-  useEffect(() => {
-    if (!isPlaying) return;
-
-    let animId;
-    let lastT = performance.now();
-
-    const loop = (t) => {
-      const dt = (t - lastT) / 1000.0;
-      lastT = t;
-      const stepHours = dt * playbackSpeed * 1.5;
-      const nextH = (activeHours + stepHours) % LUNAR_SYNODIC_HOURS;
-      setHours(Number(nextH.toFixed(2)));
-      animId = requestAnimationFrame(loop);
-    };
-
-    animId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(animId);
-  }, [isPlaying, playbackSpeed, activeHours, setHours]);
 
   // Mouse & Touch Drag Handlers
   const handlePointerDown = (e) => {
@@ -412,6 +728,13 @@ export default function LunarStreetView({
     targetCamRef.current.pitch = Math.max(-10, Math.min(50, earthData.elevation));
   };
 
+  const targetRoute = () => {
+    if (!recommendation) return;
+    setIsAutoPanning(false);
+    targetCamRef.current.yaw = recommendation.bearing;
+    targetCamRef.current.pitch = Math.max(-4, Math.min(20, (recommendation.horizonCrestDeg ?? 1.5) + 1.5));
+  };
+
   const resetNorth = () => {
     setIsAutoPanning(false);
     targetCamRef.current.yaw = 0;
@@ -422,27 +745,6 @@ export default function LunarStreetView({
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
   };
-
-  // Preset Timeline Contingencies (+3d, +7d, +14d)
-  const presets = [
-    { label: 'T+0 NOMINAL', hours: 0 },
-    { label: '+3d (+72h)', hours: 72 },
-    { label: '+7d (+168h)', hours: 168 },
-    { label: '+14d (+336h)', hours: 336 },
-  ];
-
-  // Format UTC
-  const baseEpochMs = new Date(baseDate).getTime();
-  const currentEpochMs = baseEpochMs + activeHours * 3600 * 1000;
-  const formattedUtc = new Date(currentEpochMs).toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
-
-  // Dynamic Distance Numbers formatted cleanly
-  const sunDistanceFormatted = sunData?.distanceKm
-    ? sunData.distanceKm.toLocaleString()
-    : '149,597,870';
-  const earthDistanceFormatted = earthData?.distanceKm
-    ? earthData.distanceKm.toLocaleString()
-    : '384,400';
 
   // Compass tape ticks generation
   const compassTicks = useMemo(() => {
@@ -469,17 +771,16 @@ export default function LunarStreetView({
         <div className="streetview-kicker-col">
           <div className="streetview-kicker-tag">
             <span className="pulse-dot" />
-            <span>NASA JPL HORIZONS #301 · LOLA GDR 128PPD · FIRST-PERSON LUNAR VIEW</span>
+            <span>360° TOPOGRAPHIC HORIZON VISOR // LRO LOLA DEM (+1.80M EYE HEIGHT)</span>
           </div>
-          <h2 className="streetview-title">
-            Lunar Street View & Horizon Simulator // {activeSite.name}
-          </h2>
         </div>
 
         {/* Site Quick Switcher */}
         <div className="streetview-site-selector-row" role="group" aria-label="Candidate Sites">
           {CANDIDATE_SITES_CATALOG.map((s) => {
-            const isSelected = s.id === activeSite.id || s.siteId === activeSite.siteId || s.id === activeSite.siteId;
+            const isSelected =
+              s.id === activeSite.id ||
+              (Boolean(activeSite.siteId) && (s.id === activeSite.siteId || s.defaultHorizon === activeSite.siteId));
             return (
               <button
                 key={s.id}
@@ -533,8 +834,8 @@ export default function LunarStreetView({
             </div>
           </div>
           <div className="compass-bearing-badge">
-            <span>AZ: <b>{String(Math.round(cameraState.yaw)).padStart(3, '0')}°</b></span>
-            <span>TILT: <b>{cameraState.pitch >= 0 ? `+${cameraState.pitch.toFixed(1)}°` : `${cameraState.pitch.toFixed(1)}°`}</b></span>
+            <span>VIEW AZ: <b>{String(Math.round(cameraState.yaw)).padStart(3, '0')}°</b></span>
+            <span>PITCH: <b>{cameraState.pitch >= 0 ? `+${cameraState.pitch.toFixed(1)}°` : `${cameraState.pitch.toFixed(1)}°`}</b></span>
             <span>FOV: <b>{Math.round(cameraState.fov)}°</b></span>
           </div>
         </div>
@@ -547,7 +848,36 @@ export default function LunarStreetView({
           <div className="crosshair-line v-bottom" />
         </div>
 
-        {/* 3. Floating 3D Projected Reticles for Sun & Earth */}
+        {/* Minimalist Callout Line & Unboxed Smart-Guidance Badge on 3D Horizon Crest */}
+        {recommendation && screenTargets.route.inView && (
+          <div
+            className="horizon-route-callout"
+            style={{ left: `${screenTargets.route.x}px`, top: `${screenTargets.route.y}px` }}
+            onClick={() => onSelectSite?.(recommendation.recommendedSite)}
+            title={`Click to relocate to ${recommendation.recommendedSite.name}`}
+          >
+            <svg className="route-callout-svg" width="160" height="68" viewBox="0 0 160 68" aria-hidden="true">
+              <circle cx="6" cy="62" r="3.5" fill="#5ce1e6" />
+              <circle cx="6" cy="62" r="7" fill="none" stroke="rgba(92, 225, 230, 0.45)" strokeWidth="1" />
+              <polyline
+                points="6,62 28,22 156,22"
+                fill="none"
+                stroke="rgba(92, 225, 230, 0.75)"
+                strokeWidth="1"
+              />
+            </svg>
+            <div className="route-callout-unboxed-meta">
+              <span className="route-callout-kicker">
+                BACKUP ROUTE // {recommendation.distKm} KM
+              </span>
+              <span className="route-callout-title">
+                {recommendation.recommendedSite.name.toUpperCase()}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* 3. Minimal 3D Projected Reticles for Sun & Earth (No Repeated Telemetry Numbers) */}
         {screenTargets.sun.inView && (
           <div
             className="celestial-reticle-box"
@@ -558,12 +888,6 @@ export default function LunarStreetView({
             <div className="reticle-bracket">
               <span className="reticle-icon sun"><Sun size={12} /></span>
               <span className="reticle-tag">SUN [10]</span>
-              <span className="reticle-metrics">
-                EL {sunData.elevation >= 0 ? `+${sunData.elevation}°` : `${sunData.elevation}°`}
-              </span>
-              <span className={`reticle-margin-pill ${sunData.clearance > 0 ? 'clear' : 'occluded'}`}>
-                {sunData.clearance > 0 ? 'LOS CLEAR' : 'OCCLUDED'}
-              </span>
             </div>
           </div>
         )}
@@ -578,12 +902,6 @@ export default function LunarStreetView({
             <div className="reticle-bracket">
               <span className="reticle-icon earth"><Globe size={12} /></span>
               <span className="reticle-tag">EARTH [399]</span>
-              <span className="reticle-metrics">
-                EL {earthData.elevation >= 0 ? `+${earthData.elevation}°` : `${earthData.elevation}°`}
-              </span>
-              <span className={`reticle-margin-pill ${earthData.clearance > 0 ? 'clear' : 'occluded'}`}>
-                {earthData.clearance > 0 ? 'DTE LOCK' : 'BLOCKED'}
-              </span>
             </div>
           </div>
         )}
@@ -601,7 +919,7 @@ export default function LunarStreetView({
             onClick={targetSun}
           >
             {screenTargets.sun.x < 100 ? <ChevronLeft size={12} /> : null}
-            <span>SUN [10] // AZ {sunData.azimuth}°</span>
+            <span>SUN [10]</span>
             {screenTargets.sun.x >= 100 ? <ChevronRight size={12} /> : null}
           </button>
         )}
@@ -618,7 +936,7 @@ export default function LunarStreetView({
             onClick={targetEarth}
           >
             {screenTargets.earth.x < 100 ? <ChevronLeft size={12} /> : null}
-            <span>EARTH [399] // AZ {earthData.azimuth}°</span>
+            <span>EARTH [399]</span>
             {screenTargets.earth.x >= 100 ? <ChevronRight size={12} /> : null}
           </button>
         )}
@@ -644,6 +962,17 @@ export default function LunarStreetView({
               <Globe size={13} />
               <span>LOCK EARTH</span>
             </button>
+            {recommendation && (
+              <button
+                type="button"
+                className="vp-btn"
+                onClick={targetRoute}
+                title={`Align Camera View with Recommended Route to ${recommendation.recommendedSite.name}`}
+              >
+                <Sparkles size={13} />
+                <span>LOCK ROUTE</span>
+              </button>
+            )}
             <button
               type="button"
               className="vp-btn"
@@ -687,171 +1016,13 @@ export default function LunarStreetView({
         </div>
       </div>
 
-      {/* 3. Clean Unboxed Monospace Telemetry Grid (Zero Heavy UI) */}
-      <div className="streetview-telemetry-grid">
-        {/* Channel 1: Sun (JPL ID 10) */}
-        <div className="telemetry-channel-col">
-          <div className="telemetry-channel-header">
-            <span className="channel-title">
-              <Sun size={13} style={{ color: '#ffb14a' }} />
-              <span>SOLAR EPHEMERIS</span>
-            </span>
-            <span className="channel-id-badge">JPL ID: 10</span>
-          </div>
-
-          <div className="telemetry-stat-row">
-            <span className="stat-label">DISTANCE (KM):</span>
-            <span className="stat-val highlight">{sunDistanceFormatted}<span className="stat-unit">KM</span></span>
-          </div>
-          <div className="telemetry-stat-row">
-            <span className="stat-label">AZIMUTH / ELEVATION:</span>
-            <span className="stat-val">{sunData.azimuth.toFixed(2)}° / {sunData.elevation >= 0 ? `+${sunData.elevation.toFixed(2)}°` : `${sunData.elevation.toFixed(2)}°`}</span>
-          </div>
-          <div className="telemetry-stat-row">
-            <span className="stat-label">LOLA HORIZON CLEARANCE:</span>
-            <span className={`stat-val ${sunData.clearance > 0 ? 'positive' : 'negative'}`}>
-              {sunData.clearance > 0 ? `+${sunData.clearance.toFixed(2)}° [CLEAR]` : `${sunData.clearance.toFixed(2)}° [OCCLUDED]`}
-            </span>
-          </div>
-          <div className="telemetry-stat-row">
-            <span className="stat-label">DIRECT SOLAR FLUX:</span>
-            <span className="stat-val amber">{sunData.directFluxW.toFixed(1)}<span className="stat-unit">W/M²</span></span>
-          </div>
-        </div>
-
-        {/* Channel 2: Earth (JPL ID 399) */}
-        <div className="telemetry-channel-col">
-          <div className="telemetry-channel-header">
-            <span className="channel-title">
-              <Globe size={13} style={{ color: '#5ce1e6' }} />
-              <span>EARTH VECTOR & DTE</span>
-            </span>
-            <span className="channel-id-badge">JPL ID: 399</span>
-          </div>
-
-          <div className="telemetry-stat-row">
-            <span className="stat-label">DISTANCE (KM):</span>
-            <span className="stat-val highlight">{earthDistanceFormatted}<span className="stat-unit">KM</span></span>
-          </div>
-          <div className="telemetry-stat-row">
-            <span className="stat-label">AZIMUTH / ELEVATION:</span>
-            <span className="stat-val">{earthData.azimuth.toFixed(2)}° / {earthData.elevation >= 0 ? `+${earthData.elevation.toFixed(2)}°` : `${earthData.elevation.toFixed(2)}°`}</span>
-          </div>
-          <div className="telemetry-stat-row">
-            <span className="stat-label">LOLA HORIZON CLEARANCE:</span>
-            <span className={`stat-val ${earthData.clearance > 0 ? 'positive' : 'negative'}`}>
-              {earthData.clearance > 0 ? `+${earthData.clearance.toFixed(2)}° [DIRECT LOS]` : `${earthData.clearance.toFixed(2)}° [SHADOWED]`}
-            </span>
-          </div>
-          <div className="telemetry-stat-row">
-            <span className="stat-label">PHASE / DTE STATUS:</span>
-            <span className="stat-val">{earthData.phaseFraction ? `${Math.round(earthData.phaseFraction * 100)}% ${earthData.phaseName.toUpperCase()}` : 'LOCKED'}</span>
-          </div>
-        </div>
-
-        {/* Channel 3: Lunar Observer Station */}
-        <div className="telemetry-channel-col">
-          <div className="telemetry-channel-header">
-            <span className="channel-title">
-              <Crosshair size={13} style={{ color: '#8f9cff' }} />
-              <span>OBSERVER STATION</span>
-            </span>
-            <span className="channel-id-badge">SELENO #301</span>
-          </div>
-
-          <div className="telemetry-stat-row">
-            <span className="stat-label">TOPOGRAPHIC SITE:</span>
-            <span className="stat-val">{activeSite.name}</span>
-          </div>
-          <div className="telemetry-stat-row">
-            <span className="stat-label">LAT / LON:</span>
-            <span className="stat-val">{Math.abs(latitude).toFixed(3)}° {latitude < 0 ? 'S' : 'N'} / {Math.abs(longitude).toFixed(3)}° {longitude < 0 ? 'W' : 'E'}</span>
-          </div>
-          <div className="telemetry-stat-row">
-            <span className="stat-label">ELEVATION (DATUM):</span>
-            <span className="stat-val">+{elevation.toLocaleString()}<span className="stat-unit">M</span></span>
-          </div>
-          <div className="telemetry-stat-row">
-            <span className="stat-label">CAMERA HEIGHT:</span>
-            <span className="stat-val highlight">+1.80<span className="stat-unit">M [ASTRONAUT VISOR]</span></span>
-          </div>
-        </div>
-      </div>
-
-      {/* 4. Interactive Simulation Timeline Scrubber */}
-      <div className="streetview-timeline-bar" aria-label="Interactive Ephemeris Time Scrubber">
-        <div className="timeline-ctrl-row">
-          <div className="timeline-playback-group">
-            <button
-              type="button"
-              className="playback-btn"
-              onClick={() => setIsPlaying(!isPlaying)}
-              title={isPlaying ? 'Pause Simulation' : 'Play Ephemeris Propagation'}
-            >
-              {isPlaying ? <Pause size={14} /> : <Play size={14} />}
-            </button>
-            <button
-              type="button"
-              className="playback-btn"
-              onClick={() => { setIsPlaying(false); setHours(0); }}
-              title="Reset Timeline to T+0"
-            >
-              <RotateCcw size={14} />
-            </button>
-            <select
-              className="playback-speed-select"
-              value={playbackSpeed}
-              onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
-              aria-label="Simulation Playback Speed"
-            >
-              <option value="1">1 HR / SEC</option>
-              <option value="6">6 HR / SEC</option>
-              <option value="24">24 HR / SEC (1D/S)</option>
-              <option value="72">72 HR / SEC (3D/S)</option>
-            </select>
-          </div>
-
-          {/* Contingency Presets (+3d, +7d, +14d) */}
-          <div className="timeline-preset-pills" role="group" aria-label="Schedule Contingency Presets">
-            {presets.map((p) => {
-              const isActive = Math.abs(activeHours - p.hours) < 0.8;
-              return (
-                <button
-                  key={p.label}
-                  type="button"
-                  className={`preset-pill ${isActive ? 'is-active' : ''}`}
-                  onClick={() => {
-                    setIsPlaying(false);
-                    setHours(p.hours);
-                  }}
-                >
-                  {p.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Range Scrubber Slider */}
-        <input
-          type="range"
-          className="timeline-slider-track"
-          min="0"
-          max={Number(LUNAR_SYNODIC_HOURS.toFixed(1))}
-          step="0.5"
-          value={activeHours}
-          onChange={(e) => {
-            setIsPlaying(false);
-            setHours(Number(e.target.value));
-          }}
-          aria-label="Scrub Mission Timeline"
-        />
-
-        <div className="timeline-footer-row">
-          <span>MISSION EPOCH: <b>{formattedUtc}</b></span>
-          <span>CYCLE PROGRESS: <b>+{(activeHours / 24.0).toFixed(1)}d ({activeHours.toFixed(1)}h) / {((activeHours / LUNAR_SYNODIC_HOURS) * 100).toFixed(1)}% LUNAR SYNODIC DAY</b></span>
-        </div>
-      </div>
+      {/* 3. Isolated 60 FPS Simulation Timeline Scrubber */}
+      <StreetViewTimelineBar
+        externalHours={activeHours}
+        baseDate={baseDate}
+        onFastTick={handleFastTick}
+        onCommitHours={setHours}
+      />
     </section>
   );
 }

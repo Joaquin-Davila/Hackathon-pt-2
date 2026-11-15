@@ -17,7 +17,7 @@ import {
   DEFAULT_MISSION_EPOCH,
 } from './ephemerisEngine.js';
 
-import { CANDIDATE_SITES_CATALOG } from './horizonsService.js';
+import { CANDIDATE_SITES_CATALOG, generateRealisticHorizonData } from './horizonsService.js';
 
 // Pre-compiled verified LOLA profiles for rapid spatial lookup
 const CATALOG_FALLBACK_PROFILES = {
@@ -51,7 +51,22 @@ const CATALOG_FALLBACK_PROFILES = {
     { azimuth: 180, elevation: 0.85 }, { azimuth: 225, elevation: 1.40 },
     { azimuth: 270, elevation: 1.90 }, { azimuth: 315, elevation: 1.30 },
   ],
+  'shackleton-psr': [
+    { azimuth: 0, elevation: 6.40 }, { azimuth: 45, elevation: 7.10 },
+    { azimuth: 90, elevation: 6.85 }, { azimuth: 135, elevation: 5.90 },
+    { azimuth: 180, elevation: 6.20 }, { azimuth: 225, elevation: 7.40 },
+    { azimuth: 270, elevation: 6.95 }, { azimuth: 315, elevation: 6.50 },
+  ],
 };
+
+/**
+ * Synthesizes a physically grounded LOLA horizon elevation profile for custom
+ * selenographic coordinates when no pre-cached JSON file is matched.
+ * Accounts for latitude (South Polar grazing geometry vs non-polar), longitude, and observer elevation.
+ */
+export function synthesizeCustomLolaProfile(lat, lon, elevation = 2000) {
+  return generateRealisticHorizonData({ lat, lon, elevation }).horizonProfile;
+}
 
 function toRad(deg) {
   return (deg * Math.PI) / 180.0;
@@ -113,10 +128,11 @@ export function evaluateMissionFeasibility(
   const lon = Number(site.lon ?? site.longitude ?? 0.0);
   const elevation = Number(site.elevation ?? site.elevationMeters ?? 4200);
 
-  // Fallback profile if empty
+  // Fallback profile if empty: use catalog profile or synthesize LOLA topography from lat/lon/elev
+  const lookupKey = site.id ?? site.siteId;
   const profile = (Array.isArray(horizonProfile) && horizonProfile.length > 0)
     ? horizonProfile
-    : (CATALOG_FALLBACK_PROFILES[site.id ?? site.siteId] || CATALOG_FALLBACK_PROFILES['shackleton-rim']);
+    : (CATALOG_FALLBACK_PROFILES[lookupKey] || synthesizeCustomLolaProfile(lat, lon, elevation));
 
   const stepHours = 2.0; // 2-hour sampling steps
   const totalSteps = Math.floor(durationHours / stepHours);
@@ -245,24 +261,26 @@ export function evaluateMissionFeasibility(
  */
 export function generateSmartWarnings(evaluation) {
   const warnings = [];
-  const { metrics, verdict } = evaluation;
+  const { metrics } = evaluation;
 
-  if (metrics.currentSunClearance <= 0.0) {
+  if (metrics.currentSunClearance <= 0.0 || metrics.solarIlluminationPct === 0.0) {
     warnings.push({
       id: 'SUN_TERRAIN_OCCULTED',
       level: 'CRITICAL',
-      title: 'ZERO SOLAR POWER WINDOW // HIGH TERRAIN OBSTRUCTION',
-      message: `Direct solar line-of-sight is physically occluded by local crater topography (${metrics.currentSunClearance}° clearance below LOLA crest). Immediate battery drain hazard.`,
+      title: 'Warning: High terrain obstruction / Zero solar power window',
+      shortBadge: 'Warning: High terrain obstruction / Zero solar power window',
+      message: `Direct solar line-of-sight is physically occluded by local crater topography (${metrics.currentSunClearance}° clearance vs LOLA horizon crest). Immediate battery depletion hazard.`,
       icon: 'ShieldAlert',
     });
   }
 
-  if (metrics.solarIlluminationPct < 30.0) {
+  if (metrics.solarIlluminationPct < 35.0) {
     warnings.push({
       id: 'EXTREME_SHADOWING_PSR',
       level: 'CRITICAL',
-      title: 'PERMANENTLY SHADOWED REGION (PSR) MARGIN HAZARD',
-      message: `Cumulative illumination is restricted to only ${metrics.solarIlluminationPct}% of mission duration. Surface solar arrays will experience extended cryogenic darkness exceeding thermal survival margins.`,
+      title: 'Warning: Extreme PSR shadowing / Cryogenic survival threshold exceeded',
+      shortBadge: `PSR Shadow Hazard (${metrics.solarIlluminationPct}% Sun Window)`,
+      message: `Cumulative solar illumination is restricted to ${metrics.solarIlluminationPct}% (${metrics.maxContinuousSunHours}h max continuous window). Surface arrays face prolonged cryogenic darkness.`,
       icon: 'AlertTriangle',
     });
   }
@@ -271,16 +289,18 @@ export function generateSmartWarnings(evaluation) {
     warnings.push({
       id: 'DTE_RF_BLACKOUT',
       level: 'WARNING',
-      title: 'COMMUNICATION BLACKOUT // DIRECT DTE PATH OCCLUDED',
-      message: `Direct-to-Earth line-of-sight is obstructed by crater rim topography (${metrics.currentEarthClearance}° margin). S-Band / X-Band carrier lock cannot be established without orbital relay.`,
+      title: 'Warning: Direct-to-Earth (DTE) communication blackout / Terrain occultation',
+      shortBadge: 'Warning: DTE Communication Blackout (RF LOS Blocked)',
+      message: `Earth (Target 399) line-of-sight is obstructed by local ridge topography (${metrics.currentEarthClearance}° margin). S-Band / X-Band DTE link requires ridge relocation or relay.`,
       icon: 'Radio',
     });
   } else if (metrics.dteUptimePct < 60.0) {
     warnings.push({
       id: 'DTE_MARGINAL_UPTIME',
       level: 'CAUTION',
-      title: 'RESTRICTED DTE WINDOW (LIBRATION OCCULTATION)',
-      message: `Libration-driven dips will drop Earth below horizon for ${((100 - metrics.dteUptimePct) * 0.01 * evaluation.durationHours).toFixed(0)} hours during this operational phase.`,
+      title: 'Caution: Intermittent DTE communication window (Libration dip)',
+      shortBadge: `Restricted DTE Uptime (${metrics.dteUptimePct}%)`,
+      message: `Optical libration in latitude drops Earth below local LOLA crest for ${((100 - metrics.dteUptimePct) * 0.01 * evaluation.durationHours).toFixed(0)}h during this window.`,
       icon: 'WifiOff',
     });
   }
@@ -309,9 +329,13 @@ export function recommendOptimalAlternative(
   const currentElev = currentEval.coordinates.elevation;
 
   // Evaluate candidate catalog sites to find the highest-performing alternative
+  const currentId = currentSite.id ?? currentSite.siteId;
   const alternatives = CANDIDATE_SITES_CATALOG.map((catSite) => {
     // Avoid recommending the exact same site if it's already selected
-    if (catSite.id === currentSite.id || catSite.siteId === currentSite.siteId) {
+    if (
+      (currentId && (catSite.id === currentId || catSite.defaultHorizon === currentId)) ||
+      (currentSite.siteId && (catSite.id === currentSite.siteId || catSite.defaultHorizon === currentSite.siteId))
+    ) {
       return null;
     }
 
@@ -354,6 +378,12 @@ export function recommendOptimalAlternative(
 
   if (!topPick) return null;
 
+  // Horizon elevation at the recommended bearing for 3D/2D horizon callout lines
+  const effectiveProfile = (Array.isArray(currentProfile) && currentProfile.length > 0)
+    ? currentProfile
+    : (CATALOG_FALLBACK_PROFILES[currentSite.id ?? currentSite.siteId] || synthesizeCustomLolaProfile(currentLat, currentLon, currentElev));
+  const horizonCrestDeg = Number(getTerrainElevationAtAzimuth(effectiveProfile, topPick.bearing).toFixed(2));
+
   // Generate 3-Waypoint Traverse Route Geometry
   // Waypoint 0: Origin (Current Location)
   // Waypoint 1: Saddle Egress / Slope Skirt
@@ -366,7 +396,7 @@ export function recommendOptimalAlternative(
     {
       id: 'WP-00',
       label: 'LANDING ORIGIN',
-      role: 'DEGRADED ZONE',
+      role: currentEval.verdict === 'NOMINAL' ? 'PRIMARY TOUCHDOWN' : 'SHADOWED / DEGRADED ZONE',
       lat: currentLat,
       lon: currentLon,
       elevation: currentElev,
@@ -375,23 +405,23 @@ export function recommendOptimalAlternative(
     },
     {
       id: 'WP-01',
-      label: 'SADDLE EGRESS',
-      role: 'SLOPE TRANSITION',
+      label: 'RIDGE SADDLE CORRIDOR',
+      role: 'SLOPE EGRESS TRANSITION',
       lat: midLat,
       lon: midLon,
       elevation: midElev,
       cumulativeKm: Number((topPick.distKm * 0.52).toFixed(2)),
-      slopeDeg: 8.4,
+      slopeDeg: 6.8,
     },
     {
       id: 'WP-02',
-      label: `${topPick.site.name.toUpperCase()} CREST APEX`,
-      role: 'HIGH-ILLUMINATION HAVEN',
+      label: `${topPick.site.name.toUpperCase()} APEX`,
+      role: 'OPTIMAL SOLAR & DTE HAVEN',
       lat: topPick.site.lat,
       lon: topPick.site.lon,
       elevation: topPick.site.elevation,
       cumulativeKm: topPick.distKm,
-      slopeDeg: 4.2,
+      slopeDeg: 3.4,
     },
   ];
 
@@ -400,19 +430,30 @@ export function recommendOptimalAlternative(
     evaluation: topPick.evaluation,
     distKm: topPick.distKm,
     bearing: topPick.bearing,
+    horizonCrestDeg,
     deltaElev: topPick.deltaElev,
     deltaSunPct: topPick.deltaSunPct,
     deltaSunHours: topPick.deltaSunHours,
     deltaDtePct: topPick.deltaDtePct,
     utilityScore: Number(topPick.utilityScore.toFixed(1)),
     waypoints,
-    rationale: `Relocating ${topPick.distKm} km at bearing ${topPick.bearing}° to ${topPick.site.name} delivers +${topPick.deltaSunPct}% cumulative solar illumination and +${topPick.deltaSunHours}h continuous power, fully resolving shadow occultation.`,
+    rankedAlternatives: alternatives.slice(0, 3).map((alt) => ({
+      site: alt.site,
+      distKm: alt.distKm,
+      bearing: alt.bearing,
+      solarIlluminationPct: alt.evaluation.metrics.solarIlluminationPct,
+      maxContinuousSunHours: alt.evaluation.metrics.maxContinuousSunHours,
+      dteUptimePct: alt.evaluation.metrics.dteUptimePct,
+      utilityScore: Number(alt.utilityScore.toFixed(1)),
+    })),
+    rationale: `Relocating ${topPick.distKm} km at azimuth ${topPick.bearing}° to ${topPick.site.name} yields ${topPick.evaluation.metrics.solarIlluminationPct}% cumulative illumination (${topPick.deltaSunPct >= 0 ? `+${topPick.deltaSunPct}%` : `${topPick.deltaSunPct}%`}) and ${topPick.evaluation.metrics.dteUptimePct}% DTE link uptime.`,
   };
 }
 
 /**
  * Schedule Slippage & Launch Delay Matrix Evaluator
- * Evaluates operational feasibility across +0d, +3d, +7d, +14d contingency windows
+ * Evaluates operational feasibility across +0d, +3d, +7d, +14d contingency windows,
+ * recalculating whether the primary site or recommended alternative ridge preserves safety windows.
  */
 export function evaluateScheduleSlippageMatrix(
   site,
@@ -421,20 +462,40 @@ export function evaluateScheduleSlippageMatrix(
   baseDate = DEFAULT_MISSION_EPOCH
 ) {
   const slips = [
-    { label: 'T+0 NOMINAL', hours: 0, delayDays: 0 },
-    { label: '+3d SLIP', hours: 72, delayDays: 3 },
-    { label: '+7d SLIP', hours: 168, delayDays: 7 },
-    { label: '+14d SLIP', hours: 336, delayDays: 14 },
+    { label: 'T+0 NOMINAL', shortLabel: '+0d', hours: 0, delayDays: 0 },
+    { label: '+3d LAUNCH DELAY', shortLabel: '+3d', hours: 72, delayDays: 3 },
+    { label: '+7d LAUNCH DELAY', shortLabel: '+7d', hours: 168, delayDays: 7 },
+    { label: '+14d LAUNCH DELAY', shortLabel: '+14d', hours: 336, delayDays: 14 },
   ];
 
   return slips.map((slip) => {
     const result = evaluateMissionFeasibility(site, horizonProfile, slip.hours, durationHours, baseDate);
     const warnings = generateSmartWarnings(result);
+    const rec = recommendOptimalAlternative(site, horizonProfile, slip.hours, durationHours, baseDate);
+    const isViable =
+      result.metrics.solarIlluminationPct >= 55.0 &&
+      result.metrics.dteUptimePct >= 55.0 &&
+      result.metrics.currentSunClearance > -0.5;
+    const backupViable = rec
+      ? rec.evaluation.metrics.solarIlluminationPct >= 65.0 && rec.evaluation.metrics.dteUptimePct >= 65.0
+      : false;
+
     return {
       ...slip,
       evaluation: result,
       warnings,
-      isViable: result.metrics.solarIlluminationPct >= 50.0 && result.metrics.dteUptimePct >= 50.0,
+      isViable,
+      recommendedBackup: rec
+        ? {
+            site: rec.recommendedSite,
+            distKm: rec.distKm,
+            bearing: rec.bearing,
+            solarIlluminationPct: rec.evaluation.metrics.solarIlluminationPct,
+            maxContinuousSunHours: rec.evaluation.metrics.maxContinuousSunHours,
+            dteUptimePct: rec.evaluation.metrics.dteUptimePct,
+            preservesSafetyWindow: backupViable,
+          }
+        : null,
     };
   });
 }

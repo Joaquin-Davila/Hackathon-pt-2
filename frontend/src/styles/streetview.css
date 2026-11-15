@@ -248,7 +248,7 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  width: min(92%, 780px);
+  width: min(92%, 820px);
   pointer-events: none;
 }
 
@@ -256,41 +256,45 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 12px;
-  background: rgba(255, 59, 48, 0.16);
-  border: 1px solid rgba(255, 59, 48, 0.5);
-  border-radius: 2px;
-  backdrop-filter: blur(8px);
+  padding: 4px 10px;
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 59, 48, 0.7);
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   color: #ff6b6b;
-  text-shadow: 0 0 8px rgba(255, 59, 48, 0.6);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.95), 0 0 10px rgba(255, 59, 48, 0.45);
   pointer-events: auto;
   animation: visorWarnPulse 2s infinite alternate ease-in-out;
 }
 
+.visor-smart-warning-badge .warn-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff3b30;
+  box-shadow: 0 0 8px #ff3b30;
+}
+
 @keyframes visorWarnPulse {
-  from { opacity: 0.85; transform: scale(0.99); }
-  to { opacity: 1; transform: scale(1.01); }
+  from { opacity: 0.85; }
+  to { opacity: 1; }
 }
 
 .visor-smart-recommendation-pill {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 5px 12px;
-  background: rgba(9, 10, 13, 0.85);
-  border: 1px solid rgba(92, 225, 230, 0.45);
-  border-radius: 2px;
-  backdrop-filter: blur(10px);
+  padding: 4px 10px;
+  background: transparent;
+  border-bottom: 1px solid rgba(92, 225, 230, 0.55);
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
   letter-spacing: 0.08em;
   color: #fff;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.95);
   pointer-events: auto;
-  box-shadow: 0 0 16px rgba(92, 225, 230, 0.15);
 }
 
 .visor-smart-recommendation-pill .rec-sparkle-icon {
@@ -299,25 +303,80 @@
 }
 
 .visor-smart-recommendation-pill .rec-text {
-  color: #dbe4ee;
+  color: #e6eef8;
+}
+
+.visor-smart-recommendation-pill .rec-text b {
+  color: var(--cyan, #5ce1e6);
 }
 
 .visor-smart-recommendation-pill .rec-adopt-btn {
-  padding: 2px 8px;
-  background: var(--cyan, #5ce1e6);
-  color: #090a0d;
+  padding: 2px 7px;
+  background: transparent;
+  border-bottom: 1px solid var(--cyan, #5ce1e6);
+  color: var(--cyan, #5ce1e6);
   font-family: 'JetBrains Mono', monospace;
   font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  border-radius: 2px;
+  letter-spacing: 0.12em;
   transition: all 0.15s ease;
   white-space: nowrap;
 }
 
 .visor-smart-recommendation-pill .rec-adopt-btn:hover {
-  background: #8bf4f8;
-  transform: scale(1.05);
+  color: #fff;
+  border-bottom-color: #fff;
+}
+
+/* 3c. Minimalist Callout Line & Unboxed Smart-Guidance Badge on 3D Horizon */
+.horizon-route-callout {
+  position: absolute;
+  transform: translate(-6px, -62px);
+  z-index: 13;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.route-callout-svg {
+  display: block;
+  overflow: visible;
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.9));
+}
+
+.route-callout-unboxed-meta {
+  position: absolute;
+  left: 32px;
+  top: -18px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  white-space: nowrap;
+  font-family: 'JetBrains Mono', monospace;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.95);
+}
+
+.route-callout-kicker {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--cyan, #5ce1e6);
+}
+
+.route-callout-title {
+  font-family: 'Exo 2', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #fff;
+}
+
+.route-callout-stats {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: #b8c4d6;
+}
+
+.horizon-route-callout:hover .route-callout-title {
+  color: var(--cyan, #5ce1e6);
 }
 
 /* 4. Center Reticle / Crosshair */

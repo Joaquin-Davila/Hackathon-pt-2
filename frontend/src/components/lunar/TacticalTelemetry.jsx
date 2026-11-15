@@ -1,18 +1,22 @@
-import React from 'react';
-import { Sun, Radio, Activity, Clock, Compass, Zap, Satellite, AlertCircle, CheckCircle2 } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Sun, Radio, Activity, ShieldAlert, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { formatMissionHours } from '../../services/ephemerisEngine.js';
+import {
+  evaluateMissionFeasibility,
+  generateSmartWarnings,
+} from '../../services/recommendationEngine.js';
 
-function formatCoordinate(val, axis) {
-  if (val == null || !Number.isFinite(Number(val))) return '—';
-  const num = Number(val);
-  const dir = axis === 'lat' ? (num < 0 ? 'S' : 'N') : (num < 0 ? 'W' : 'E');
-  return `${Math.abs(num).toFixed(4)}° ${dir}`;
-}
-
-export default function TacticalTelemetry({ telemetry, profile = 'astronaut' }) {
+const TacticalTelemetry = React.memo(function TacticalTelemetry({
+  site,
+  horizonProfile = [],
+  hoursOffset = 0,
+  telemetry,
+  profile = 'astronaut',
+  hideVectorAngles = false,
+}) {
   if (!telemetry) return null;
 
-  const { coordinates, sun, earth } = telemetry;
+  const { sun, earth } = telemetry;
   const isAstronaut = profile.toLowerCase() === 'astronaut';
 
   // Solar array power estimation for 2.0 m^2 29% triple-junction cells
@@ -20,77 +24,50 @@ export default function TacticalTelemetry({ telemetry, profile = 'astronaut' }) 
   const cellEfficiency = 0.29; // 29% efficiency
   const estimatedPowerWatts = (sun.directFluxW * solarPanelArea * cellEfficiency).toFixed(1);
 
+  // Compute consolidated smart warnings for the bottom of ExplorerMode
+  const smartWarnings = useMemo(() => {
+    if (!site) return [];
+    const assessment = evaluateMissionFeasibility(site, horizonProfile, hoursOffset);
+    return generateSmartWarnings(assessment);
+  }, [site, horizonProfile, hoursOffset]);
+
   return (
     <div className="tactical-hud-panel" aria-label="Tactical Ephemeris Telemetry Stream">
-      {/* SECTION 1: SELENOGRAPHIC POSITION */}
-      <div className="telemetry-unboxed-section">
-        <div className="telemetry-section-kicker">
-          <Compass size={12} className="kicker-icon" />
-          <span>CHANNEL 01 // SELENOGRAPHIC POSITIONING (LOLA 128PPD)</span>
-        </div>
-        <div className="telemetry-metrics-grid">
-          <div className="telemetry-metric-item">
-            <span className="mono-label">LATITUDE</span>
-            <span className="mono-value is-highlight">{formatCoordinate(coordinates.latitude, 'lat')}</span>
-            <span className="mono-caption">SOUTH POLAR CIRCLE</span>
-          </div>
-
-          <div className="telemetry-metric-item">
-            <span className="mono-label">LONGITUDE</span>
-            <span className="mono-value is-highlight">{formatCoordinate(coordinates.longitude, 'lon')}</span>
-            <span className="mono-caption">PRIME MERIDIAN REF</span>
-          </div>
-
-          <div className="telemetry-metric-item">
-            <span className="mono-label">ELEVATION (LOLA)</span>
-            <span className="mono-value">+{coordinates.elevationMeters?.toLocaleString() ?? 4200} M</span>
-            <span className="mono-caption">ABOVE LUNAR DATUM</span>
-          </div>
-
-          <div className="telemetry-metric-item">
-            <span className="mono-label">EPHEMERIS OBS</span>
-            <span className="mono-value">#301 (MOON REF)</span>
-            <span className="mono-caption">JPL HORIZONS SYSTEM</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="hairline-divider" />
-
-      {/* SECTION 2: SOLAR VECTOR & IRRADIANCE */}
+      {/* SECTION 1: SOLAR VECTOR & IRRADIANCE */}
       <div className="telemetry-unboxed-section">
         <div className="telemetry-section-kicker">
           <Sun size={12} className="kicker-icon is-amber" />
-          <span>CHANNEL 02 // SOLAR VECTOR & DIRECT IRRADIANCE (TARGET 10)</span>
-          <span className={`status-pill ${sun.isIlluminated ? 'is-nominal' : 'is-warning'}`}>
-            {sun.isIlluminated ? 'SURFACE ILLUMINATED' : 'TERRAIN OCCULTATION'}
-          </span>
+          <span>CHANNEL 01 // SOLAR IRRADIANCE & POWER GENERATION (TARGET 10)</span>
         </div>
 
         <div className="telemetry-metrics-grid">
-          <div className="telemetry-metric-item">
-            <span className="mono-label">SOLAR ELEVATION</span>
-            <span className={`mono-value ${sun.elevation > 0 ? 'is-amber' : 'is-negative'}`}>
-              {sun.elevation > 0 ? `+${sun.elevation}°` : `${sun.elevation}°`}
-            </span>
-            <span className="mono-caption">LOCAL HORIZON ANGLE</span>
-          </div>
+          {!hideVectorAngles && (
+            <>
+              <div className="telemetry-metric-item">
+                <span className="mono-label">SOLAR ELEVATION</span>
+                <span className={`mono-value ${sun.elevation > 0 ? 'is-amber' : 'is-negative'}`}>
+                  {sun.elevation > 0 ? `+${sun.elevation}°` : `${sun.elevation}°`}
+                </span>
+                <span className="mono-caption">LOCAL HORIZON ANGLE</span>
+              </div>
 
-          <div className="telemetry-metric-item">
-            <span className="mono-label">SOLAR AZIMUTH</span>
-            <span className="mono-value">{sun.azimuth}°</span>
-            <span className="mono-caption">CLOCKWISE FROM NORTH</span>
-          </div>
+              <div className="telemetry-metric-item">
+                <span className="mono-label">SOLAR AZIMUTH</span>
+                <span className="mono-value">{sun.azimuth}°</span>
+                <span className="mono-caption">CLOCKWISE FROM NORTH</span>
+              </div>
 
-          <div className="telemetry-metric-item">
-            <span className="mono-label">TERRAIN CLEARANCE</span>
-            <span className={`mono-value ${sun.clearance > 0 ? 'is-success' : 'is-danger'}`}>
-              {sun.clearance > 0 ? `+${sun.clearance}°` : `${sun.clearance}°`}
-            </span>
-            <span className="mono-caption">
-              {sun.clearance > 0 ? 'CLEAR OF CRATER RIM' : 'SHADOWED BY RIDGE'}
-            </span>
-          </div>
+              <div className="telemetry-metric-item">
+                <span className="mono-label">TERRAIN CLEARANCE</span>
+                <span className={`mono-value ${sun.clearance > 0 ? 'is-success' : 'is-danger'}`}>
+                  {sun.clearance > 0 ? `+${sun.clearance}°` : `${sun.clearance}°`}
+                </span>
+                <span className="mono-caption">
+                  {sun.clearance > 0 ? 'CLEAR OF CRATER RIM' : 'SHADOWED BY RIDGE'}
+                </span>
+              </div>
+            </>
+          )}
 
           <div className="telemetry-metric-item">
             <span className="mono-label">DIRECT SOLAR FLUX</span>
@@ -116,40 +93,41 @@ export default function TacticalTelemetry({ telemetry, profile = 'astronaut' }) 
 
       <div className="hairline-divider" />
 
-      {/* SECTION 3: DIRECT-TO-EARTH (DTE) TELEMETRY */}
+      {/* SECTION 2: DIRECT-TO-EARTH (DTE) TELEMETRY */}
       <div className="telemetry-unboxed-section">
         <div className="telemetry-section-kicker">
           <Radio size={12} className="kicker-icon is-periwinkle" />
-          <span>CHANNEL 03 // DIRECT-TO-EARTH RF TELEMETRY (TARGET 399)</span>
-          <span className={`status-pill ${earth.isVisible ? 'is-periwinkle' : 'is-danger'}`}>
-            {earth.isVisible ? 'CARRIER LOCK ACTIVE' : 'NO RF LINE-OF-SIGHT'}
-          </span>
+          <span>CHANNEL 02 // DIRECT-TO-EARTH RF LINK BUDGET (TARGET 399)</span>
         </div>
 
         <div className="telemetry-metrics-grid">
-          <div className="telemetry-metric-item">
-            <span className="mono-label">EARTH ELEVATION</span>
-            <span className={`mono-value ${earth.elevation > 0 ? 'is-periwinkle' : 'is-negative'}`}>
-              {earth.elevation > 0 ? `+${earth.elevation}°` : `${earth.elevation}°`}
-            </span>
-            <span className="mono-caption">LIBRATION WOBBLE INCLUDED</span>
-          </div>
+          {!hideVectorAngles && (
+            <>
+              <div className="telemetry-metric-item">
+                <span className="mono-label">EARTH ELEVATION</span>
+                <span className={`mono-value ${earth.elevation > 0 ? 'is-periwinkle' : 'is-negative'}`}>
+                  {earth.elevation > 0 ? `+${earth.elevation}°` : `${earth.elevation}°`}
+                </span>
+                <span className="mono-caption">LIBRATION WOBBLE INCLUDED</span>
+              </div>
 
-          <div className="telemetry-metric-item">
-            <span className="mono-label">EARTH AZIMUTH</span>
-            <span className="mono-value">{earth.azimuth}°</span>
-            <span className="mono-caption">ANTENNA POINTING AZ</span>
-          </div>
+              <div className="telemetry-metric-item">
+                <span className="mono-label">EARTH AZIMUTH</span>
+                <span className="mono-value">{earth.azimuth}°</span>
+                <span className="mono-caption">ANTENNA POINTING AZ</span>
+              </div>
 
-          <div className="telemetry-metric-item">
-            <span className="mono-label">TERRAIN CLEARANCE</span>
-            <span className={`mono-value ${earth.clearance > 0 ? 'is-success' : 'is-danger'}`}>
-              {earth.clearance > 0 ? `+${earth.clearance}°` : `${earth.clearance}°`}
-            </span>
-            <span className="mono-caption">
-              {earth.clearance > 0 ? 'RF BEAM UNIMPEDED' : 'OCCLUDED BY PEAK'}
-            </span>
-          </div>
+              <div className="telemetry-metric-item">
+                <span className="mono-label">TERRAIN CLEARANCE</span>
+                <span className={`mono-value ${earth.clearance > 0 ? 'is-success' : 'is-danger'}`}>
+                  {earth.clearance > 0 ? `+${earth.clearance}°` : `${earth.clearance}°`}
+                </span>
+                <span className="mono-caption">
+                  {earth.clearance > 0 ? 'RF BEAM UNIMPEDED' : 'OCCLUDED BY PEAK'}
+                </span>
+              </div>
+            </>
+          )}
 
           <div className="telemetry-metric-item">
             <span className="mono-label">CARRIER SNR (DSN)</span>
@@ -177,22 +155,83 @@ export default function TacticalTelemetry({ telemetry, profile = 'astronaut' }) 
 
       <div className="hairline-divider" />
 
-      {/* SECTION 4: ASTRONAUT VS STUDENT CONTEXTUAL NOTES */}
+      {/* SECTION 3: SINGLE CONSOLIDATED ALERTS & FLIGHT RULES SECTION AT THE END */}
       <div className="telemetry-unboxed-section telemetry-footnote-section">
+        <div className="telemetry-section-kicker">
+          <ShieldAlert size={13} className="kicker-icon" />
+          <span>CHANNEL 03 // CONSOLIDATED OPERATIONAL ALERTS & FLIGHT RULES</span>
+        </div>
+
+        <div className="smart-warnings-stack">
+          {smartWarnings.length > 0 ? (
+            smartWarnings.map((warn) => {
+              const isCritical = warn.level === 'CRITICAL';
+              const statusEmoji = isCritical ? '🛑' : '⚠️';
+              return (
+                <div
+                  key={warn.id}
+                  className={`smart-warning-callout is-${warn.level.toLowerCase()}`}
+                  role="alert"
+                >
+                  <div className="warning-icon-col">
+                    <span className="warning-emoji" aria-hidden="true">
+                      {statusEmoji}
+                    </span>
+                    {isCritical ? (
+                      <ShieldAlert size={18} className="warn-icon is-critical" />
+                    ) : (
+                      <AlertTriangle size={18} className={`warn-icon is-${warn.level.toLowerCase()}`} />
+                    )}
+                  </div>
+                  <div className="warning-body-col">
+                    <div className="warning-head-row">
+                      <span className={`warning-level-tag is-${warn.level.toLowerCase()}`}>
+                        {statusEmoji} {warn.level}
+                      </span>
+                      <strong className="warning-title-text">{warn.title}</strong>
+                    </div>
+                    <p className="warning-detail-text">{warn.message || warn.detail}</p>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="smart-warning-callout is-nominal" role="status">
+              <div className="warning-icon-col">
+                <span className="warning-emoji" aria-hidden="true">✅</span>
+                <CheckCircle2 size={18} className="warn-icon is-nominal" />
+              </div>
+              <div className="warning-body-col">
+                <div className="warning-head-row">
+                  <span className="warning-level-tag is-nominal">✅ NOMINAL</span>
+                  <strong className="warning-title-text">
+                    All Solar & Direct-to-Earth (DTE) Flight Rules Satisfied
+                  </strong>
+                </div>
+                <p className="warning-detail-text">
+                  Unobstructed solar array illumination and continuous Earth RF line-of-sight confirmed for the active selenographic epoch.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="telemetry-note-box">
-          <Activity size={13} className="note-icon" />
+          <Activity size={15} className="note-icon" />
           <div className="note-content">
             <span className="note-title">
-              {isAstronaut ? 'MISSION FLIGHT RULE ALERT // POLAR CRITICAL CONSTRAINTS' : 'EXPLORER INSIGHT // SOUTH POLE GEOMETRY'}
+              {isAstronaut ? 'POLAR ORBITAL GEOMETRY // REFERENCE NOTE' : 'EXPLORER INSIGHT // SOUTH POLE GEOMETRY'}
             </span>
             <p className="note-text">
               {isAstronaut
-                ? 'Because lunar obliquity is only 1.54°, solar elevation remains within ±1.5° of the horizon, circling 360° every 29.53 days. Vertical solar arrays provide 40x higher collection than flat horizontal panels. Maintain minimum +0.25° terrain clearance to prevent rover cold-trap thermal collapse.'
-                : 'At the Moon’s South Pole, the Sun never rises high in the sky. It slowly skims around the horizon like an endless sunrise. High crater rims can cast shadows over 50 kilometers long, while mountain peaks remain bathed in near-constant sunlight.'}
+                ? 'Lunar obliquity is 1.54°: solar elevation remains within ±1.5° of the horizon over each 29.53-day synodic cycle. Vertical solar arrays provide 40x higher collection than horizontal panels.'
+                : 'At the Moon’s South Pole, the Sun skims slowly around the horizon like an endless sunrise while mountain peaks stay bathed in near-constant sunlight.'}
             </p>
           </div>
         </div>
       </div>
     </div>
   );
-}
+});
+
+export default TacticalTelemetry;

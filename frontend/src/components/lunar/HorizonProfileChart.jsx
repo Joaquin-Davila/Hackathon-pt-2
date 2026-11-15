@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo } from 'react';
 import { Sun, Globe, Radio, Eye, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { normalizeAngle360, getTerrainElevationAtAzimuth } from '../../services/ephemerisEngine.js';
 
-export default function HorizonProfileChart({
+const HorizonProfileChart = React.memo(function HorizonProfileChart({
   primarySite,
   primaryProfile = [],
   primaryTelemetry,
@@ -153,16 +153,13 @@ export default function HorizonProfileChart({
         <div className="hud-header-left">
           <div className="hud-pulse-status">
             <span className={`pulse-beacon ${sun.isIlluminated ? 'is-nominal' : 'is-warning'}`} />
-            <span className="hud-kicker">ORBITAL HORIZON PROJECTION // 360° LOLA RELIEF</span>
+            <span className="hud-kicker">360° TOPOGRAPHIC ELEVATION PROFILE // LRO LOLA DEM ANALYSIS</span>
           </div>
-          <h2 className="hud-primary-title">
-            {primarySite?.name ?? 'Candidate Site'}
-            {overlaySite && (
-              <span className="hud-overlay-subhead">
-                {' '}— <span className="overlay-accent">OVERLAY: {overlaySite.name}</span>
-              </span>
-            )}
-          </h2>
+          {overlaySite && (
+            <div className="hud-overlay-subhead">
+              <span className="overlay-accent">OVERLAY COMPARISON: {overlaySite.name}</span>
+            </div>
+          )}
         </div>
 
         <div className="hud-header-right">
@@ -171,12 +168,12 @@ export default function HorizonProfileChart({
             <b>0° → 360° CW</b>
           </div>
           <div className="hud-pill-tag">
-            <span>LOLA RES</span>
-            <b>128 PPD DEM</b>
+            <span>LRO LOLA DEM</span>
+            <b>128 PPD POLAR</b>
           </div>
           <div className="hud-pill-tag">
-            <span>SAMPLES</span>
-            <b>{primarySamples.length} PTS</b>
+            <span>RESOLUTION</span>
+            <b>{primarySamples.length} AZIMUTH PTS</b>
           </div>
         </div>
       </div>
@@ -395,22 +392,19 @@ export default function HorizonProfileChart({
             />
 
             {/* Sun Callout Tag */}
-            <g transform={`translate(${sunX > padding.left + plotWidth - 110 ? sunX - 105 : sunX + 12}, ${sunY - 12})`}>
+            <g transform={`translate(${sunX > padding.left + plotWidth - 90 ? sunX - 85 : sunX + 12}, ${sunY - 8})`}>
               <rect
                 x="0"
-                y="-14"
-                width="98"
-                height="28"
+                y="-10"
+                width="76"
+                height="18"
                 fill="rgba(9, 10, 13, 0.88)"
                 stroke={sun.isIlluminated ? 'rgba(255, 177, 74, 0.6)' : 'rgba(239, 68, 68, 0.7)'}
                 strokeWidth="1"
                 rx="2"
               />
-              <text x="7" y="-2" fill="#FFB14A" className="hud-badge-mono">
-                SUN (TGT 10)
-              </text>
-              <text x="7" y="9" fill={sun.isIlluminated ? '#10B981' : '#EF4444'} className="hud-badge-mono-sub">
-                {sun.elevation > 0 ? `+${sun.elevation}°` : `${sun.elevation}°`} · {sun.isIlluminated ? 'ILLUM' : 'SHADOW'}
+              <text x="7" y="2" fill="#FFB14A" className="hud-badge-mono">
+                SUN [10]
               </text>
             </g>
           </g>
@@ -468,22 +462,19 @@ export default function HorizonProfileChart({
             />
 
             {/* Earth Callout Tag */}
-            <g transform={`translate(${earthX > padding.left + plotWidth - 110 ? earthX - 105 : earthX + 12}, ${earthY - 12})`}>
+            <g transform={`translate(${earthX > padding.left + plotWidth - 95 ? earthX - 90 : earthX + 12}, ${earthY - 8})`}>
               <rect
                 x="0"
-                y="-14"
-                width="98"
-                height="28"
+                y="-10"
+                width="82"
+                height="18"
                 fill="rgba(9, 10, 13, 0.88)"
                 stroke={earth.isVisible ? 'rgba(143, 156, 255, 0.6)' : 'rgba(239, 68, 68, 0.7)'}
                 strokeWidth="1"
                 rx="2"
               />
-              <text x="7" y="-2" fill="#8F9CFF" className="hud-badge-mono">
-                EARTH (TGT 399)
-              </text>
-              <text x="7" y="9" fill={earth.isVisible ? '#10B981' : '#EF4444'} className="hud-badge-mono-sub">
-                {earth.elevation > 0 ? `+${earth.elevation}°` : `${earth.elevation}°`} · {earth.isVisible ? 'DTE LOCK' : 'BLOCKED'}
+              <text x="7" y="2" fill="#8F9CFF" className="hud-badge-mono">
+                EARTH [399]
               </text>
             </g>
           </g>
@@ -556,28 +547,24 @@ export default function HorizonProfileChart({
       <div className="horizon-hud-legend">
         <div className="legend-chip">
           <span className="legend-indicator legend-cyan-line" />
-          <span className="legend-label">ACTIVE HORIZON: <b>{primarySite?.name}</b></span>
+          <span className="legend-label">PRIMARY HORIZON CONTOUR</span>
         </div>
 
         {overlaySite && (
           <div className="legend-chip">
             <span className="legend-indicator legend-amber-dashed" />
-            <span className="legend-label">BACKUP OVERLAY: <b>{overlaySite.name}</b></span>
+            <span className="legend-label">BACKUP OVERLAY CONTOUR</span>
           </div>
         )}
 
         <div className="legend-chip">
           <span className="legend-indicator legend-sun-disc" />
-          <span className="legend-label">
-            SOLAR VECTOR (TGT 10) · <span className="mono-val">{sun.azimuth}° AZ / {sun.elevation}° EL</span>
-          </span>
+          <span className="legend-label">SOLAR VECTOR [10]</span>
         </div>
 
         <div className="legend-chip">
           <span className="legend-indicator legend-earth-disc" />
-          <span className="legend-label">
-            EARTH DTE (TGT 399) · <span className="mono-val">{earth.azimuth}° AZ / {earth.elevation}° EL</span>
-          </span>
+          <span className="legend-label">EARTH DTE VECTOR [399]</span>
         </div>
 
         <div className="legend-chip legend-click-hint">
@@ -586,4 +573,6 @@ export default function HorizonProfileChart({
       </div>
     </div>
   );
-}
+});
+
+export default HorizonProfileChart;

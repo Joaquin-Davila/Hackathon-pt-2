@@ -27,7 +27,6 @@ import {
 } from '../services/recommendationEngine.js';
 
 import { getHorizonData, CANDIDATE_SITES_CATALOG } from '../services/horizonsService.js';
-import { DEFAULT_MISSION_EPOCH } from '../services/ephemerisEngine.js';
 import '../styles/planner.css';
 
 const DEFAULT_SITE = {
@@ -39,6 +38,15 @@ const DEFAULT_SITE = {
   elevation: 2150,
 };
 
+const PSR_HAZARD_SITE = {
+  id: 'shackleton-psr',
+  siteId: 'shackleton-psr',
+  name: 'Shackleton Interior PSR (Shadow Floor)',
+  lat: -89.9,
+  lon: 0.0,
+  elevation: -1400,
+};
+
 export default function PlannerMode({
   site = null,
   onBack,
@@ -47,24 +55,28 @@ export default function PlannerMode({
   const [activeSite, setActiveSite] = useState(site || DEFAULT_SITE);
   const [customOpen, setCustomOpen] = useState(false);
   const [horizonProfile, setHorizonProfile] = useState([]);
-  const [loadingProfile, setLoadingProfile] = useState(false);
-  const [durationHours, setDurationHours] = useState(336); // 14-day exploration window
+  const [hoursOffset, setHoursOffset] = useState(0); // Launch delay / schedule offset in hours
+  const [durationHours] = useState(336); // 14-day exploration window
 
   // Form inputs for custom coordinates
   const [customLat, setCustomLat] = useState(activeSite.lat ?? -87.4);
   const [customLon, setCustomLon] = useState(activeSite.lon ?? -5.1);
   const [customElev, setCustomElev] = useState(activeSite.elevation ?? 2150);
 
-  // Fetch LOLA profile whenever active site changes
+  useEffect(() => {
+    if (site) {
+      setActiveSite(site);
+    }
+  }, [site]);
+
+  // Fetch LOLA profile whenever active site changes (including dynamic latitude-based profile for custom coordinates)
   useEffect(() => {
     let cancelled = false;
     const lookupId = activeSite.horizonId ?? activeSite.siteId ?? String(activeSite.id ?? '').replace(/-rim$/, '');
-    setLoadingProfile(true);
 
-    getHorizonData(lookupId).then((data) => {
+    getHorizonData(lookupId, activeSite).then((data) => {
       if (!cancelled) {
         setHorizonProfile(data?.horizonProfile ?? []);
-        setLoadingProfile(false);
       }
     });
 
@@ -73,20 +85,20 @@ export default function PlannerMode({
     };
   }, [activeSite]);
 
-  // Run Real-Time Feasibility Evaluation
+  // Run Real-Time Feasibility Evaluation (incorporating launch delay hoursOffset)
   const evaluation = useMemo(() => {
-    return evaluateMissionFeasibility(activeSite, horizonProfile, 0, durationHours);
-  }, [activeSite, horizonProfile, durationHours]);
+    return evaluateMissionFeasibility(activeSite, horizonProfile, hoursOffset, durationHours);
+  }, [activeSite, horizonProfile, hoursOffset, durationHours]);
 
-  // Generate Automated Smart Warnings
+  // Generate Automated Smart Warnings (consolidated at the bottom)
   const smartWarnings = useMemo(() => {
     return generateSmartWarnings(evaluation);
   }, [evaluation]);
 
   // Generate Spatial AI Ridge & Route Recommendation
   const recommendation = useMemo(() => {
-    return recommendOptimalAlternative(activeSite, horizonProfile, 0, durationHours);
-  }, [activeSite, horizonProfile, durationHours]);
+    return recommendOptimalAlternative(activeSite, horizonProfile, hoursOffset, durationHours);
+  }, [activeSite, horizonProfile, hoursOffset, durationHours]);
 
   // Evaluate Schedule Slippage Contingency Matrix (+0d, +3d, +7d, +14d)
   const slippageMatrix = useMemo(() => {
@@ -103,7 +115,7 @@ export default function PlannerMode({
       setActiveSite({
         id: 'custom-coords',
         siteId: 'custom',
-        name: `Target (${lat.toFixed(2)}°, ${lon.toFixed(2)}°)`,
+        name: `Custom Target`,
         lat,
         lon,
         elevation: elev || 2000,
@@ -141,9 +153,6 @@ export default function PlannerMode({
           <h1 id="planner-main-title" className="planner-headline">
             Mission Feasibility & Route Optimization
           </h1>
-          <p className="planner-subhead">
-            Real-time multi-day surface assessment combining NASA LOLA GDR 128PPD elevation profiles and JPL Horizons orbital vectors (Sun 10, Earth 399). Evaluates continuous illumination windows, DTE link margins, and generates automated ridge bypass recommendations.
-          </p>
         </div>
       </header>
 
@@ -151,7 +160,9 @@ export default function PlannerMode({
       <div className="planner-site-selector-strip">
         <div className="planner-site-tabs" role="group" aria-label="Select Target Location">
           {CANDIDATE_SITES_CATALOG.map((catSite) => {
-            const isSelected = activeSite.id === catSite.id || activeSite.siteId === catSite.siteId;
+            const isSelected =
+              activeSite.id === catSite.id ||
+              (Boolean(activeSite.siteId) && (activeSite.siteId === catSite.id || activeSite.siteId === catSite.defaultHorizon));
             return (
               <button
                 key={catSite.id}
@@ -163,6 +174,14 @@ export default function PlannerMode({
               </button>
             );
           })}
+          <button
+            type="button"
+            className={`site-tab-pill is-psr-test ${activeSite.id === PSR_HAZARD_SITE.id ? 'is-active' : ''}`}
+            onClick={() => setActiveSite(PSR_HAZARD_SITE)}
+            title="Test deep Permanently Shadowed Region (0% Solar Window)"
+          >
+            Shackleton Floor (PSR)
+          </button>
         </div>
 
         <button
@@ -218,7 +237,7 @@ export default function PlannerMode({
         </form>
       )}
 
-      {/* 3. Operational Feasibility Assessment Gauge (Unboxed Monospace) */}
+      {/* 3. Operational Feasibility Assessment Gauge (Each Core Metric Shown Once) */}
       <section className="feasibility-evaluation-strip" aria-label="Target Feasibility Metrics">
         <div className="feasibility-metric-col">
           <span className="feasibility-metric-label">FEASIBILITY VERDICT</span>
@@ -229,7 +248,7 @@ export default function PlannerMode({
             {evaluation.verdict}
           </span>
           <span className="feasibility-metric-subtext">
-            {evaluation.verdictLabel} · RISK {evaluation.riskScore}/100
+            RISK INDEX: {evaluation.riskScore}/100
           </span>
         </div>
 
@@ -239,7 +258,7 @@ export default function PlannerMode({
             {evaluation.metrics.solarIlluminationPct}%
           </span>
           <span className="feasibility-metric-subtext">
-            MAX CONTINUOUS WINDOW: <b>{evaluation.metrics.maxContinuousSunHours}H</b> ({Math.round(evaluation.metrics.maxContinuousSunHours / 24)}d)
+            MAX CONTINUOUS WINDOW: <b>{evaluation.metrics.maxContinuousSunHours}H</b>
           </span>
         </div>
 
@@ -249,7 +268,7 @@ export default function PlannerMode({
             {evaluation.metrics.dteUptimePct}%
           </span>
           <span className="feasibility-metric-subtext">
-            MAX CONTINUOUS LINK: <b>{evaluation.metrics.maxContinuousDteHours}H</b> · S-BAND LOS
+            MAX CONTINUOUS LINK: <b>{evaluation.metrics.maxContinuousDteHours}H</b>
           </span>
         </div>
 
@@ -259,39 +278,12 @@ export default function PlannerMode({
             {evaluation.metrics.currentSunClearance >= 0 ? `+${evaluation.metrics.currentSunClearance}°` : `${evaluation.metrics.currentSunClearance}°`}
           </span>
           <span className="feasibility-metric-subtext">
-            LOLA CREST ELEV: {evaluation.metrics.minSolarElevation}° MIN / {evaluation.metrics.maxSolarElevation}° MAX
+            TARGET COORDS: {Math.abs(evaluation.coordinates.lat).toFixed(2)}°S, {Math.abs(evaluation.coordinates.lon).toFixed(2)}°{evaluation.coordinates.lon < 0 ? 'W' : 'E'} ({evaluation.coordinates.elevation >= 0 ? `+${evaluation.coordinates.elevation}M` : `${evaluation.coordinates.elevation}M`})
           </span>
         </div>
       </section>
 
-      {/* 4. Smart Warnings & Obstruction Alerts */}
-      {smartWarnings.length > 0 && (
-        <section className="smart-warnings-stack" aria-label="Operational Hazard Warnings">
-          {smartWarnings.map((warn) => (
-            <div
-              key={warn.id}
-              className={`smart-warning-banner level-${warn.level.toLowerCase()}`}
-              role="alert"
-            >
-              <div className="warning-icon-box">
-                {warn.level === 'CRITICAL' ? (
-                  <ShieldAlert size={20} />
-                ) : warn.id === 'DTE_RF_BLACKOUT' ? (
-                  <WifiOff size={20} />
-                ) : (
-                  <AlertTriangle size={20} />
-                )}
-              </div>
-              <div className="warning-content">
-                <span className="warning-title">{warn.title}</span>
-                <span className="warning-message">{warn.message}</span>
-              </div>
-            </div>
-          ))}
-        </section>
-      )}
-
-      {/* 5. Spatial AI Route & Alternative Site Recommendation (Hero Callout) */}
+      {/* 4. Spatial AI Route & Alternative Site Recommendation */}
       {recommendation && (
         <section className="recommendation-callout-hero" aria-label="AI Recommended Ridge & Route">
           <div className="rec-kicker-row">
@@ -300,18 +292,15 @@ export default function PlannerMode({
               <span>SPATIAL AI RECOMMENDATION // OPTIMAL RIDGE RELOCATION</span>
             </span>
             <span className="rec-utility-score">
-              SPATIAL UTILITY: <b>{recommendation.utilityScore} / 100</b>
+              UTILITY SCORE: <b>{recommendation.utilityScore} / 100</b>
             </span>
           </div>
 
           <div className="rec-headline-row">
             <div className="rec-title-col">
               <h2 className="rec-target-name">
-                Recommended Target: {recommendation.recommendedSite.name}
+                Recommended Backup Ridge: {recommendation.recommendedSite.name}
               </h2>
-              <p className="rec-rationale">
-                {recommendation.rationale}
-              </p>
             </div>
           </div>
 
@@ -323,29 +312,33 @@ export default function PlannerMode({
             </div>
             <div className="delta-metric-item">
               <span className="delta-label">INITIAL BEARING:</span>
-              <span className="delta-val">{recommendation.bearing}° AZIMUTH</span>
+              <span className="delta-val">{recommendation.bearing}° AZ</span>
             </div>
             <div className="delta-metric-item">
               <span className="delta-label">SOLAR ILLUMINATION GAIN:</span>
-              <span className="delta-val positive">+{recommendation.deltaSunPct}%</span>
+              <span className="delta-val positive">
+                {recommendation.deltaSunPct >= 0 ? `+${recommendation.deltaSunPct}%` : `${recommendation.deltaSunPct}%`}
+              </span>
             </div>
             <div className="delta-metric-item">
-              <span className="delta-label">CONTINUOUS POWER WINDOW GAIN:</span>
-              <span className="delta-val positive">+{recommendation.deltaSunHours} HOURS</span>
-            </div>
-            <div className="delta-metric-item">
-              <span className="delta-label">ELEVATION GAIN:</span>
+              <span className="delta-label">ELEVATION DELTA:</span>
               <span className="delta-val">
                 {recommendation.deltaElev >= 0 ? `+${recommendation.deltaElev.toLocaleString()} M` : `${recommendation.deltaElev.toLocaleString()} M`}
               </span>
             </div>
           </div>
 
-          {/* 3-Waypoint Traverse Route */}
+          {/* 3-Waypoint Traverse Route with Minimalist Callout Lines */}
           <div className="waypoints-route-block">
             <span className="waypoints-header">
-              PROPOSED 3-WAYPOINT SURFACE TRAVERSE ROUTE (LOLA DIGITAL ELEVATION MODEL):
+              3-WAYPOINT SURFACE TRAVERSE VECTOR (LOLA DEM):
             </span>
+            <svg className="waypoints-callout-line-svg" viewBox="0 0 900 22" preserveAspectRatio="none" aria-hidden="true">
+              <line x1="12" y1="11" x2="888" y2="11" stroke="rgba(92, 225, 230, 0.35)" strokeWidth="1" strokeDasharray="4 4" />
+              <circle cx="12" cy="11" r="4" fill="#ff3b30" />
+              <circle cx="450" cy="11" r="4" fill="#ffb14a" />
+              <circle cx="888" cy="11" r="5" fill="#5ce1e6" />
+            </svg>
             <div className="waypoint-steps-row">
               {recommendation.waypoints.map((wp) => (
                 <div key={wp.id} className="waypoint-card">
@@ -355,9 +348,8 @@ export default function PlannerMode({
                   </div>
                   <span className="waypoint-name">{wp.label}</span>
                   <div className="waypoint-details">
-                    <span>{Math.abs(wp.lat).toFixed(3)}°S, {Math.abs(wp.lon).toFixed(3)}°{wp.lon < 0 ? 'W' : 'E'}</span>
-                    <span>+{wp.elevation.toLocaleString()}M</span>
-                    <span>+{wp.cumulativeKm} km</span>
+                    <span>SLOPE {wp.slopeDeg}°</span>
+                    <span>DIST +{wp.cumulativeKm} KM</span>
                   </div>
                 </div>
               ))}
@@ -380,63 +372,120 @@ export default function PlannerMode({
               onClick={() => onNavigateToStreetView?.(recommendation.recommendedSite)}
             >
               <Eye size={14} />
-              <span>EXPLORE TRAVERSE IN 3D STREET VIEW</span>
+              <span>EXPLORE IN 3D STREET VIEW</span>
             </button>
           </div>
         </section>
       )}
 
-      {/* 6. Schedule Slippage & Launch Delay Matrix */}
+      {/* 5. Schedule Slippage & Launch Delay Contingency Selector (+0d, +3d, +7d, +14d) */}
       <section className="slippage-matrix-section" aria-label="Schedule Slippage Contingency Analysis">
         <span className="slippage-section-title">
-          SCHEDULE SLIPPAGE CONTINGENCY MATRIX (+0D, +3D, +7D, +14D LAUNCH DELAY PROPAGATION):
+          LAUNCH DELAY CONTINGENCY SIMULATOR — CLICK SCENARIO TO RECALCULATE (+0D, +3D, +7D, +14D):
         </span>
         <div className="slippage-cards-grid">
           {slippageMatrix.map((slip) => {
             const illum = slip.evaluation.metrics.solarIlluminationPct;
             const dte = slip.evaluation.metrics.dteUptimePct;
             const isViable = slip.isViable;
+            const isSelectedDelay = Math.abs(hoursOffset - slip.hours) < 1;
 
             return (
               <div
                 key={slip.label}
-                className={`slippage-card ${isViable ? 'is-viable' : 'is-hazard'}`}
+                className={`slippage-card ${isViable ? 'is-viable' : 'is-hazard'} ${isSelectedDelay ? 'is-selected-delay' : ''}`}
+                onClick={() => setHoursOffset(slip.hours)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter') setHoursOffset(slip.hours); }}
               >
                 <div className="slip-header-row">
                   <span className="slip-label">{slip.label}</span>
-                  <span className={`slip-tag ${isViable ? 'viable' : 'hazard'}`}>
-                    {isViable ? 'VIABLE' : 'HAZARD'}
-                  </span>
+                  {isSelectedDelay && <span className="slip-tag viable">ACTIVE</span>}
                 </div>
 
                 <div className="slip-stats-row">
                   <span className="slip-stat-label">SOLAR ILLUM:</span>
-                  <span className={`slip-stat-val ${illum >= 50 ? 'positive' : 'negative'}`}>
+                  <span className={`slip-stat-val ${illum >= 55 ? 'positive' : 'negative'}`}>
                     {illum}%
                   </span>
                 </div>
                 <div className="slip-stats-row">
-                  <span className="slip-stat-label">SUN WINDOW:</span>
+                  <span className="slip-stat-label">MAX SUN WINDOW:</span>
                   <span className="slip-stat-val">
                     {slip.evaluation.metrics.maxContinuousSunHours}H
                   </span>
                 </div>
                 <div className="slip-stats-row">
                   <span className="slip-stat-label">DTE UPTIME:</span>
-                  <span className={`slip-stat-val ${dte >= 50 ? 'positive' : 'negative'}`}>
+                  <span className={`slip-stat-val ${dte >= 55 ? 'positive' : 'negative'}`}>
                     {dte}%
-                  </span>
-                </div>
-                <div className="slip-stats-row">
-                  <span className="slip-stat-label">STATUS:</span>
-                  <span className="slip-stat-val">
-                    {slip.evaluation.verdict}
                   </span>
                 </div>
               </div>
             );
           })}
         </div>
+      </section>
+
+      {/* 6. Single Consolidated Operational Alerts Section at the End */}
+      <section className="smart-warnings-stack" aria-label="Consolidated Operational Alerts">
+        <span className="slippage-section-title">
+          CONSOLIDATED OPERATIONAL ALERTS & FLIGHT RULES:
+        </span>
+        {smartWarnings.length > 0 ? (
+          smartWarnings.map((warn) => {
+            const isCritical = warn.level === 'CRITICAL';
+            const statusEmoji = isCritical ? '🛑' : '⚠️';
+            return (
+              <div
+                key={warn.id}
+                className={`smart-warning-banner level-${warn.level.toLowerCase()}`}
+                role="alert"
+              >
+                <div className="warning-icon-box">
+                  <span className="warning-emoji" aria-hidden="true">
+                    {statusEmoji}
+                  </span>
+                  {isCritical ? (
+                    <ShieldAlert size={18} />
+                  ) : warn.id === 'DTE_RF_BLACKOUT' ? (
+                    <WifiOff size={18} />
+                  ) : (
+                    <AlertTriangle size={18} />
+                  )}
+                </div>
+                <div className="warning-content">
+                  <div className="warning-header-badges">
+                    <span className={`warning-level-pill level-${warn.level.toLowerCase()}`}>
+                      {statusEmoji} {warn.level}
+                    </span>
+                    <span className="warning-title">{warn.title}</span>
+                  </div>
+                  <span className="warning-message">{warn.message}</span>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="smart-warning-banner level-nominal" role="status">
+            <div className="warning-icon-box">
+              <span className="warning-emoji" aria-hidden="true">✅</span>
+              <CheckCircle2 size={18} />
+            </div>
+            <div className="warning-content">
+              <div className="warning-header-badges">
+                <span className="warning-level-pill level-nominal">✅ NOMINAL</span>
+                <span className="warning-title">
+                  All Mission Illumination & Direct-to-Earth (DTE) Flight Rules Satisfied
+                </span>
+              </div>
+              <span className="warning-message">
+                Selected coordinates maintain safe solar generation and continuous Earth RF link margins across the 14-day surface window.
+              </span>
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );

@@ -1,0 +1,1340 @@
+/* ==========================================================================
+   LUNAV ACADEMY — ARCADE SPACE EXPLORATION VIDEO GAME UI & HUD
+   Palette:
+   - Space Dark: #151A1E / #101827
+   - Electric Blue: #25BFFF
+   - Cyan: #42E8E8
+   - Energy Green: #21D69B
+   - Reward Gold: #FFC247
+   ========================================================================== */
+
+.lunav-arcade-shell {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 20px 48px;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* 1. TOP ARCADE HUD BAR */
+.arcade-top-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 12px 18px;
+  background: linear-gradient(180deg, #162032 0%, #101827 100%);
+  border: 2px solid rgba(37, 191, 255, 0.45);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.ath-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.ath-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 15px;
+  border-radius: 10px;
+  border: 2px solid rgba(66, 232, 232, 0.45);
+  background: rgba(15, 23, 42, 0.85);
+  color: #42E8E8;
+  font-family: var(--mono, monospace);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.ath-back-btn:hover {
+  background: #42E8E8;
+  color: #090D16;
+  transform: translateY(-2px);
+}
+
+.ath-player-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 14px 6px 8px;
+  border-radius: 12px;
+  background: rgba(9, 13, 22, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.ath-lvl-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  border: 2.5px solid #42E8E8;
+  background: #101827;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.ath-lvl-circle span {
+  font-family: var(--mono, monospace);
+  font-size: 0.54rem;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.ath-lvl-circle strong {
+  font-family: var(--mono, monospace);
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.ath-xp-col {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 165px;
+}
+
+.ath-rank-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-family: var(--mono, monospace);
+  font-size: 0.72rem;
+}
+
+.ath-rank-row span {
+  color: #FFC247;
+  font-weight: 800;
+}
+
+.ath-xp-track {
+  width: 100%;
+  height: 9px;
+  border-radius: 999px;
+  background: #090D16;
+  border: 1px solid rgba(37, 191, 255, 0.35);
+  overflow: hidden;
+}
+
+.ath-xp-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #25BFFF 0%, #21D69B 55%, #FFC247 100%);
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Currencies Strip */
+.ath-currencies {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.currency-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #0b111e;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  font-family: var(--mono, monospace);
+}
+
+.currency-pill.is-coins {
+  border-color: rgba(255, 194, 71, 0.55);
+  color: #FFC247;
+}
+
+.currency-pill.is-energy {
+  border-color: rgba(33, 214, 155, 0.55);
+  color: #21D69B;
+}
+
+.currency-pill.is-badges {
+  border-color: rgba(66, 232, 232, 0.55);
+  color: #42E8E8;
+}
+
+.currency-pill strong {
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.currency-pill small {
+  font-size: 0.6rem;
+  color: #cbd5e1;
+  font-weight: 700;
+}
+
+.ath-pro-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 15px;
+  border-radius: 10px;
+  border: 2px solid rgba(37, 191, 255, 0.5);
+  background: rgba(37, 191, 255, 0.14);
+  color: #ffffff;
+  font-family: var(--mono, monospace);
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.ath-pro-btn:hover {
+  background: #25BFFF;
+  color: #090D16;
+}
+
+/* Reward Notification Banner */
+.arcade-reward-toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 18px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, rgba(33, 214, 155, 0.24), rgba(255, 194, 71, 0.24));
+  border: 2px solid #FFC247;
+  color: #FFC247;
+  font-family: var(--mono, monospace);
+  font-size: 0.85rem;
+  font-weight: 900;
+  box-shadow: 0 0 24px rgba(255, 194, 71, 0.3);
+}
+
+.arcade-reward-toast button {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+/* 2. MAIN MENU HERO STAGE (Astronaut + Rover Protagonist + PLAY / CONTINUE MISSION) */
+.arcade-main-menu-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.arcade-hero-stage {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 2.5px solid rgba(37, 191, 255, 0.55);
+  background: #101827;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65), 0 0 35px rgba(37, 191, 255, 0.18);
+  min-height: 310px;
+  display: flex;
+  align-items: center;
+}
+
+.hero-lunar-illustration {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@keyframes roverBob {
+  0%, 100% { transform: translate(475px, 212px); }
+  50% { transform: translate(475px, 207px); }
+}
+
+@keyframes astroFloat {
+  0%, 100% { transform: translate(295px, 198px); }
+  50% { transform: translate(295px, 188px); }
+}
+
+.hero-rover-float {
+  animation: roverBob 2.6s ease-in-out infinite;
+}
+
+.hero-astronaut-bounce {
+  animation: astroFloat 3.1s ease-in-out infinite;
+}
+
+.hero-stage-overlay {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  padding: 28px 34px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  background: linear-gradient(90deg, rgba(9, 13, 22, 0.88) 0%, rgba(9, 13, 22, 0.35) 55%, rgba(9, 13, 22, 0.82) 100%);
+}
+
+.hso-selected-badge {
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hso-code {
+  display: inline-block;
+  font-family: var(--mono, monospace);
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  color: #42E8E8;
+}
+
+.hso-title {
+  margin: 0;
+  font-size: clamp(1.6rem, 2.8vw, 2.35rem);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.85);
+}
+
+.hso-objective {
+  margin: 0;
+  font-size: 0.96rem;
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.hso-cta-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.big-arcade-play-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 34px;
+  border-radius: 14px;
+  border: 2.5px solid #ffffff;
+  background: linear-gradient(135deg, #21D69B 0%, #25BFFF 100%);
+  color: #06131f;
+  font-family: var(--mono, monospace);
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  box-shadow: 0 0 30px rgba(33, 214, 155, 0.55);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.big-arcade-play-btn:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 0 42px rgba(66, 232, 232, 0.85);
+}
+
+.big-continue-mission-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 22px;
+  border-radius: 14px;
+  border: 2px solid #FFC247;
+  background: rgba(16, 24, 39, 0.92);
+  color: #FFC247;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.18s ease;
+}
+
+.big-continue-mission-btn:hover {
+  background: rgba(255, 194, 71, 0.18);
+  transform: translateY(-2px);
+}
+
+.bcm-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.bcm-text strong {
+  font-family: var(--mono, monospace);
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.bcm-text small {
+  font-size: 0.68rem;
+  color: #f8fafc;
+}
+
+/* 3. WORLD / LUNAR REGION SELECTOR CARDS */
+.worlds-selector-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wss-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--mono, monospace);
+}
+
+.wss-header h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  color: #42E8E8;
+}
+
+.wss-header span {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #FFC247;
+}
+
+.worlds-cards-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.world-arcade-card {
+  padding: 16px;
+  border-radius: 16px;
+  background: linear-gradient(165deg, #162032 0%, #101827 100%);
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.world-arcade-card:hover,
+.world-arcade-card.is-selected {
+  border-color: var(--w-color, #25BFFF);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55), 0 0 20px rgba(37, 191, 255, 0.25);
+}
+
+.wac-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--mono, monospace);
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.wac-done-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #21D69B;
+}
+
+.wac-reward-tag {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 194, 71, 0.16);
+  color: #FFC247;
+}
+
+.wac-title {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 900;
+  line-height: 1.25;
+  color: #ffffff;
+}
+
+.wac-tag {
+  font-family: var(--mono, monospace);
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #42E8E8;
+}
+
+.wac-obj {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: #cbd5e1;
+}
+
+.wac-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.wac-best {
+  font-family: var(--mono, monospace);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #FFC247;
+}
+
+.wac-play-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: none;
+  color: #090D16;
+  font-family: var(--mono, monospace);
+  font-size: 0.7rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+/* 4. BOTTOM QUESTS & BADGES PANELS */
+.arcade-bottom-panels {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 16px;
+}
+
+.arcade-quests-box,
+.arcade-badges-box {
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: #101827;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.aqb-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono, monospace);
+}
+
+.aqb-head h3 {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.reset-save-link {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #94a3b8;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-family: var(--mono, monospace);
+  font-size: 0.62rem;
+  cursor: pointer;
+}
+
+.quests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quest-row-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #151A1E;
+  border: 1px solid rgba(37, 191, 255, 0.25);
+}
+
+.quest-row-card.is-done {
+  border-color: #21D69B;
+  opacity: 0.75;
+}
+
+.quest-row-card strong {
+  display: block;
+  font-family: var(--mono, monospace);
+  font-size: 0.72rem;
+  color: #FFC247;
+}
+
+.quest-row-card p {
+  margin: 2px 0 0;
+  font-size: 0.76rem;
+  color: #cbd5e1;
+}
+
+.quest-go-btn {
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: none;
+  background: #25BFFF;
+  color: #090D16;
+  font-family: var(--mono, monospace);
+  font-size: 0.68rem;
+  font-weight: 900;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.trophy-badges-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.trophy-badge-pill {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #151A1E;
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+}
+
+.trophy-badge-pill.is-unlocked {
+  border-color: var(--b-col, #FFC247);
+  background: rgba(255, 194, 71, 0.08);
+}
+
+.trophy-badge-pill.is-locked {
+  opacity: 0.5;
+}
+
+.trophy-badge-pill strong {
+  display: block;
+  font-family: var(--mono, monospace);
+  font-size: 0.66rem;
+}
+
+.trophy-badge-pill small {
+  display: block;
+  font-size: 0.64rem;
+  color: #94a3b8;
+  line-height: 1.25;
+}
+
+/* 5. ACTIVE PLAYABLE GAME CONTAINER & CONTROLS */
+.active-game-stage-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.game-quick-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gqs-tab {
+  flex: 1 1 160px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  background: #101827;
+  color: #cbd5e1;
+  font-family: var(--mono, monospace);
+  font-size: 0.68rem;
+  cursor: pointer;
+}
+
+.gqs-tab.is-active {
+  border-color: var(--w-color, #25BFFF);
+  background: rgba(37, 191, 255, 0.16);
+  color: #ffffff;
+}
+
+.arcade-game-container {
+  padding: 16px;
+  border-radius: 18px;
+  background: #101827;
+  border: 2.5px solid rgba(37, 191, 255, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+}
+
+.arcade-game-hud-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #151A1E;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.agh-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono, monospace);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.agh-bar-track {
+  width: 110px;
+  height: 10px;
+  border-radius: 999px;
+  background: #090D16;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+}
+
+.agh-bar-fill {
+  height: 100%;
+  transition: width 0.2s ease;
+}
+
+.agh-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: #090D16;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  font-family: var(--mono, monospace);
+  font-size: 0.72rem;
+}
+
+.agh-pill.is-cyan { border-color: #42E8E8; color: #42E8E8; }
+.agh-pill.is-gold { border-color: #FFC247; color: #FFC247; }
+.agh-pill.is-purple { border-color: #a855f7; color: #d8b4fe; }
+
+.agh-stage-pills {
+  display: flex;
+  gap: 6px;
+}
+
+.stage-chip {
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  background: #090D16;
+  color: #cbd5e1;
+  font-family: var(--mono, monospace);
+  font-size: 0.66rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.stage-chip.is-active {
+  border-color: #21D69B;
+  background: #21D69B;
+  color: #090D16;
+}
+
+.arcade-canvas-stage {
+  position: relative;
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 2px solid rgba(66, 232, 232, 0.35);
+  background: #090D16;
+}
+
+.arcade-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.canvas-top-overlay {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.cto-badge {
+  padding: 5px 11px;
+  border-radius: 8px;
+  background: rgba(9, 13, 22, 0.82);
+  border: 1px solid rgba(66, 232, 232, 0.4);
+  font-family: var(--mono, monospace);
+  font-size: 0.68rem;
+  color: #e2e8f0;
+}
+
+.cto-badge b {
+  color: #42E8E8;
+}
+
+/* Tactile Touch / Keyboard Arcade Controls Bar */
+.arcade-controls-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.touch-btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  flex: 1;
+}
+
+.arcade-touch-btn {
+  flex: 1 1 180px;
+  padding: 13px 18px;
+  border-radius: 11px;
+  border: 2px solid #25BFFF;
+  background: rgba(37, 191, 255, 0.16);
+  color: #ffffff;
+  font-family: var(--mono, monospace);
+  font-size: 0.78rem;
+  font-weight: 900;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.12s ease;
+}
+
+.arcade-touch-btn:active,
+.arcade-touch-btn:hover {
+  background: #25BFFF;
+  color: #090D16;
+  transform: translateY(-1px);
+}
+
+.arcade-touch-btn.is-jump {
+  border-color: #FFC247;
+  background: rgba(255, 194, 71, 0.2);
+  color: #FFC247;
+}
+
+.arcade-touch-btn.is-jump:active,
+.arcade-touch-btn.is-jump:hover {
+  background: #FFC247;
+  color: #090D16;
+}
+
+.arcade-touch-btn.is-gas {
+  border-color: #21D69B;
+  background: rgba(33, 214, 155, 0.2);
+  color: #21D69B;
+}
+
+.arcade-touch-btn.is-gas:active,
+.arcade-touch-btn.is-gas:hover {
+  background: #21D69B;
+  color: #090D16;
+}
+
+.arcade-mini-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  background: #151A1E;
+  color: #cbd5e1;
+  font-family: var(--mono, monospace);
+  font-size: 0.7rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* Victory / Defeat Result Modal & Micro Science Card */
+.arcade-result-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(9, 13, 22, 0.88);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 10;
+}
+
+.arcade-result-card {
+  max-width: 520px;
+  width: 100%;
+  padding: 24px 28px;
+  border-radius: 18px;
+  background: #101827;
+  border: 2.5px solid #42E8E8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+}
+
+.arcade-result-card h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.result-score-line {
+  margin: 0;
+  font-family: var(--mono, monospace);
+  font-size: 0.88rem;
+  color: #FFC247;
+}
+
+.science-micro-popup {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 11px;
+  background: rgba(37, 191, 255, 0.12);
+  border: 1.5px solid #25BFFF;
+  text-align: left;
+}
+
+.smp-icon {
+  color: #FFC247;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.science-micro-popup strong {
+  display: block;
+  font-family: var(--mono, monospace);
+  font-size: 0.74rem;
+  color: #42E8E8;
+  margin-bottom: 3px;
+}
+
+.science-micro-popup p {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #f8fafc;
+}
+
+.science-learn-more-box {
+  width: 100%;
+  padding: 10px 13px;
+  border-radius: 9px;
+  background: #151A1E;
+  border-left: 3px solid #FFC247;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #cbd5e1;
+  text-align: left;
+}
+
+.arcade-result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.arcade-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-family: var(--mono, monospace);
+  font-size: 0.75rem;
+  font-weight: 900;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.arcade-btn.is-primary {
+  background: #21D69B;
+  color: #06131f;
+}
+
+.arcade-btn.is-gold {
+  background: #FFC247;
+  color: #06131f;
+}
+
+.arcade-btn.is-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+/* GAME 02: POWER GRID SPECIFIC STYLES */
+.power-toolbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.power-tools-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.toolbar-label {
+  font-family: var(--mono, monospace);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #94a3b8;
+}
+
+.power-tool-btn,
+.light-mode-chip {
+  padding: 8px 13px;
+  border-radius: 9px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: #151A1E;
+  color: #ffffff;
+  font-family: var(--mono, monospace);
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.power-tool-btn.is-selected {
+  border-color: #FFC247;
+  background: rgba(255, 194, 71, 0.2);
+  color: #FFC247;
+}
+
+.light-mode-chip.is-active {
+  border-color: #42E8E8;
+  background: rgba(66, 232, 232, 0.2);
+  color: #42E8E8;
+}
+
+.power-grid-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.interactive-svg-node {
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.interactive-svg-node:hover {
+  opacity: 0.9;
+}
+
+@keyframes dashFlow {
+  to {
+    stroke-dashoffset: -26;
+  }
+}
+
+.wire-flow-anim {
+  animation: dashFlow 0.8s linear infinite;
+}
+
+/* GAME 04: PHYSICS ARENA SPECIFIC STYLES */
+.planet-switcher-pills {
+  display: flex;
+  gap: 8px;
+}
+
+.planet-switch-btn {
+  padding: 8px 14px;
+  border-radius: 9px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: #090D16;
+  color: #cbd5e1;
+  font-family: var(--mono, monospace);
+  font-size: 0.72rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.planet-switch-btn.is-active-moon {
+  border-color: #FFC247;
+  background: rgba(255, 194, 71, 0.2);
+  color: #FFC247;
+}
+
+.planet-switch-btn.is-active-earth {
+  border-color: #25BFFF;
+  background: rgba(37, 191, 255, 0.2);
+  color: #25BFFF;
+}
+
+.gravity-slider-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono, monospace);
+  font-size: 0.72rem;
+}
+
+.arcade-slider {
+  width: 150px;
+  accent-color: #42E8E8;
+  cursor: pointer;
+}
+
+.floating-science-toast {
+  position: absolute;
+  bottom: 14px;
+  left: 16px;
+  right: 16px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(16, 24, 39, 0.94);
+  border: 2px solid #FFC247;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
+}
+
+.fst-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fst-text strong {
+  font-family: var(--mono, monospace);
+  font-size: 0.82rem;
+  color: #FFC247;
+}
+
+.fst-text span {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.fst-detail {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+}
+
+/* GAME 05: MOON BASE BUILDER SPECIFIC STYLES */
+.colony-build-palette {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.colony-build-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  background: #151A1E;
+  color: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.colony-build-btn.is-selected {
+  border-color: var(--b-color, #25BFFF);
+  background: rgba(37, 191, 255, 0.16);
+  transform: translateY(-2px);
+}
+
+.colony-build-btn.is-poor {
+  opacity: 0.5;
+}
+
+.cbb-icon {
+  font-size: 1.55rem;
+}
+
+.cbb-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cbb-info strong {
+  font-family: var(--mono, monospace);
+  font-size: 0.7rem;
+}
+
+.cbb-cost {
+  font-family: var(--mono, monospace);
+  font-size: 0.62rem;
+  color: #FFC247;
+  font-weight: 800;
+}
+
+.cbb-info small {
+  font-size: 0.64rem;
+  color: #94a3b8;
+}
+
+.colony-terrain-stage {
+  padding: 16px;
+  background: radial-gradient(circle at 50% 25%, #172236 0%, #090D16 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.colony-sky-banner {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-family: var(--mono, monospace);
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #42E8E8;
+}
+
+.colony-tiles-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.colony-tile-card {
+  min-height: 98px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  background: rgba(30, 41, 59, 0.65);
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.colony-tile-card.is-ridge {
+  background: rgba(255, 194, 71, 0.1);
+  border-color: rgba(255, 194, 71, 0.4);
+}
+
+.colony-tile-card.is-ice-crater {
+  background: rgba(66, 232, 232, 0.1);
+  border-color: rgba(66, 232, 232, 0.4);
+}
+
+.colony-tile-card.has-building {
+  border-style: solid;
+  background: rgba(16, 24, 39, 0.92);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+}
+
+.colony-tile-card:hover {
+  transform: scale(1.03);
+  border-color: #ffffff;
+}
+
+.tile-terrain-tag {
+  font-family: var(--mono, monospace);
+  font-size: 0.58rem;
+  font-weight: 800;
+  color: #94a3b8;
+}
+
+.tile-building-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.tbv-emoji {
+  font-size: 1.7rem;
+}
+
+.tile-building-view strong {
+  font-family: var(--mono, monospace);
+  font-size: 0.66rem;
+}
+
+.tbv-online-dot {
+  font-family: var(--mono, monospace);
+  font-size: 0.56rem;
+  color: #21D69B;
+  font-weight: 800;
+}
+
+.tile-empty-prompt {
+  font-family: var(--mono, monospace);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #cbd5e1;
+  margin-bottom: 16px;
+}
+
+.icon-gold { color: #FFC247; }
+.icon-cyan { color: #42E8E8; }
+.icon-red { color: #f43f5e; }
+
+@media (max-width: 1100px) {
+  .worlds-cards-row,
+  .colony-build-palette {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .arcade-bottom-panels {
+    grid-template-columns: 1fr;
+  }
+  .colony-tiles-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .trophy-badges-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
