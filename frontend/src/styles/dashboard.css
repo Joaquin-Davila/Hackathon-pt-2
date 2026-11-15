@@ -1825,23 +1825,24 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 }
 
 /* ==========================================================================
-   9. CINEMATIC 3D MISSION LANDING / WELCOME HUB (MissionLanding.jsx)
+   9. EDITORIAL & CINEMATIC 3D MISSION LANDING (MissionLanding.jsx)
    ========================================================================== */
 .landing-main {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
-  min-height: calc(100vh - 88px);
+  min-height: calc(100vh - 76px);
+  background: #090A0D;
 }
 
 @keyframes landing-hub-enter {
   from {
     opacity: 0;
-    transform: translateY(18px) scale(0.975);
+    transform: translateY(14px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
@@ -1871,23 +1872,20 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   justify-content: flex-start;
 }
 
-.mission-landing-hub.is-cinematic-3d {
+.mission-landing-hub.is-cinematic-3d.is-editorial-dark {
   position: relative;
   width: 100%;
-  max-width: 1240px;
-  min-height: 620px;
+  max-width: 1440px;
+  min-height: calc(100vh - 96px);
   margin: 0 auto;
-  padding: 48px 36px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: #040609;
-  border: 1px solid rgba(92, 225, 230, 0.22);
-  border-radius: 16px;
+  justify-content: space-between;
+  background-color: #090A0D;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0;
   overflow: hidden;
-  box-shadow: 0 32px 96px rgba(0, 0, 0, 0.85), inset 0 0 80px rgba(92, 225, 230, 0.05);
-  font-family: 'JetBrains Mono', monospace;
+  color: #f8fafc;
   transition:
     opacity 0.42s cubic-bezier(0.4, 0, 0.2, 1),
     transform 0.42s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1900,7 +1898,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
 .mission-landing-hub.is-cinematic-3d.is-exiting {
   opacity: 0;
-  transform: translateY(-38px) scale(0.935);
+  transform: translateY(-28px) scale(0.96);
   pointer-events: none;
 }
 
@@ -1913,345 +1911,485 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   height: 100%;
 }
 
-.landing-cinematic-vignette {
+/* Editorial Chiaroscuro Vignette: Deep #090A0D negative space for typography on left, clear optical horizon on right */
+.landing-editorial-vignette {
   position: absolute;
   inset: 0;
   z-index: 2;
   pointer-events: none;
   background:
-    radial-gradient(circle at 50% 42%, rgba(4, 6, 9, 0.12) 0%, rgba(4, 6, 9, 0.68) 85%),
-    linear-gradient(180deg, rgba(4, 6, 9, 0.55) 0%, rgba(4, 6, 9, 0.05) 45%, rgba(4, 6, 9, 0.72) 100%);
+    linear-gradient(90deg, #090A0D 0%, rgba(9, 10, 13, 0.88) 38%, rgba(9, 10, 13, 0.24) 72%, rgba(9, 10, 13, 0.56) 100%),
+    linear-gradient(180deg, rgba(9, 10, 13, 0.72) 0%, rgba(9, 10, 13, 0.08) 44%, rgba(9, 10, 13, 0.92) 100%);
 }
 
-/* Subtle Earthrise Telemetry Callout near Upper-Right Horizon */
-.landing-earthrise-callout {
-  position: absolute;
-  top: 56px;
-  right: 12%;
-  z-index: 3;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 12px;
-  border-radius: 999px;
-  background: rgba(9, 14, 24, 0.68);
-  border: 1px solid rgba(96, 165, 250, 0.38);
-  backdrop-filter: blur(8px);
-  font-size: 8.5px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  color: #93c5fd;
-  pointer-events: none;
-}
-
-.earthrise-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #60a5fa;
-  box-shadow: 0 0 10px #60a5fa;
-}
-
-/* Corner Fiducial Marks */
-.landing-corner-mark {
-  position: absolute;
-  z-index: 3;
-  font-size: 9px;
-  letter-spacing: 0.16em;
-  color: rgba(148, 163, 184, 0.62);
-  pointer-events: none;
-}
-
-.landing-corner-mark.top-left { top: 20px; left: 24px; }
-.landing-corner-mark.top-right { top: 20px; right: 24px; }
-.landing-corner-mark.bottom-left { bottom: 20px; left: 24px; }
-.landing-corner-mark.bottom-right { bottom: 20px; right: 24px; }
-
-/* Central Frosted-Glass (Glassmorphism) Mission Control HUD */
-.landing-glass-hud-panel {
+/* Structural Swiss Grid Overlay */
+.landing-editorial-frame {
   position: relative;
-  z-index: 4;
-  max-width: 840px;
-  width: 100%;
-  padding: 40px 44px;
+  z-index: 3;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 22px;
-  background: rgba(10, 15, 22, 0.58);
-  backdrop-filter: blur(18px) saturate(145%);
-  -webkit-backdrop-filter: blur(18px) saturate(145%);
-  border: 1px solid rgba(92, 225, 230, 0.26);
-  border-radius: 14px;
-  box-shadow:
-    0 24px 64px rgba(0, 0, 0, 0.65),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 0 40px rgba(92, 225, 230, 0.08);
-}
-
-/* Tactical Cyan Corner Brackets on Glass HUD */
-.hud-corner-bracket {
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  border-color: var(--cyan);
-  border-style: solid;
-  pointer-events: none;
-  opacity: 0.85;
-}
-
-.hud-corner-bracket.tl {
-  top: -1px;
-  left: -1px;
-  border-width: 2px 0 0 2px;
-  border-top-left-radius: 14px;
-}
-
-.hud-corner-bracket.tr {
-  top: -1px;
-  right: -1px;
-  border-width: 2px 2px 0 0;
-  border-top-right-radius: 14px;
-}
-
-.hud-corner-bracket.bl {
-  bottom: -1px;
-  left: -1px;
-  border-width: 0 0 2px 2px;
-  border-bottom-left-radius: 14px;
-}
-
-.hud-corner-bracket.br {
-  bottom: -1px;
-  right: -1px;
-  border-width: 0 2px 2px 0;
-  border-bottom-right-radius: 14px;
-}
-
-.landing-status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 16px;
-  border-radius: 999px;
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.42);
-  color: #34d399;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-}
-
-.status-beacon-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 10px #10b981;
-}
-
-.landing-main-title {
-  margin: 0;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: clamp(22px, 3.1vw, 35px);
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  line-height: 1.24;
-  color: #ffffff;
-  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.8), 0 0 28px rgba(92, 225, 230, 0.22);
-}
-
-.landing-main-title .title-version {
-  color: var(--cyan);
-  font-weight: 600;
-}
-
-.landing-single-line-desc {
-  margin: 0;
-  max-width: 700px;
-  font-size: 12.5px;
-  line-height: 1.6;
-  letter-spacing: 0.04em;
-  color: #cbd5e1;
-}
-
-/* Primary Mode Access Buttons with Luminous Hover Glow */
-.landing-cta-matrix {
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 18px;
-  margin-top: 6px;
+  justify-content: space-between;
+  flex: 1;
   width: 100%;
+  min-height: calc(100vh - 96px);
 }
 
-.landing-mode-btn {
-  position: relative;
-  flex: 1 1 320px;
-  max-width: 390px;
-  min-width: 285px;
-  padding: 18px 22px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 7px;
-  border-radius: 10px;
-  font-family: 'JetBrains Mono', monospace;
-  cursor: pointer;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
-}
-
-.btn-main-line {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.landing-mode-btn .btn-bracket {
-  color: var(--cyan);
-  font-weight: 700;
-}
-
-.landing-mode-btn .btn-label {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-}
-
-.landing-mode-btn .btn-subtag {
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: #5ce1e6;
-  opacity: 0.94;
-}
-
-.landing-mode-btn .btn-academy-desc {
-  font-family: var(--sans, system-ui, sans-serif);
-  font-size: 11px;
-  line-height: 1.48;
-  color: #cbd5e1;
-  opacity: 0.88;
-  max-width: 34ch;
-}
-
-.landing-mode-btn.is-student {
-  background: rgba(15, 22, 32, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  color: #e2e8f0;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
-}
-
-.landing-mode-btn.is-student:hover,
-.landing-mode-btn.is-student.is-selected {
-  border-color: rgba(92, 225, 230, 0.75);
-  background: rgba(92, 225, 230, 0.14);
-  color: #ffffff;
-  box-shadow: 0 0 28px rgba(92, 225, 230, 0.28);
-  transform: translateY(-2px);
-}
-
-.landing-mode-btn.is-astronaut {
-  background: linear-gradient(135deg, rgba(92, 225, 230, 0.24) 0%, rgba(37, 99, 235, 0.26) 100%);
-  border: 1px solid rgba(92, 225, 230, 0.8);
-  color: #ffffff;
-  box-shadow: 0 0 32px rgba(92, 225, 230, 0.24), inset 0 0 18px rgba(92, 225, 230, 0.12);
-}
-
-.landing-mode-btn.is-astronaut:hover {
-  background: linear-gradient(135deg, rgba(92, 225, 230, 0.36) 0%, rgba(59, 130, 246, 0.36) 100%);
-  border-color: #ffffff;
-  box-shadow: 0 0 44px rgba(92, 225, 230, 0.48), inset 0 0 24px rgba(92, 225, 230, 0.22);
-  transform: translateY(-2px) scale(1.01);
-}
-
-/* Student Guided Overview Card */
-.landing-student-briefing {
-  width: 100%;
-  padding: 18px 20px;
-  background: rgba(9, 13, 19, 0.86);
-  border: 1px solid rgba(92, 225, 230, 0.28);
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  text-align: left;
-}
-
-.student-brief-grid {
+/* Top Telemetry Strip (Monospace Orbital Readout) */
+.landing-editorial-topbar {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  grid-template-columns: 1.2fr 1fr 1.2fr 1fr;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(9, 10, 13, 0.72);
+  backdrop-filter: blur(8px);
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
 }
 
-.student-brief-card {
+.topbar-cell {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
-  padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 8px;
-}
-
-.brief-icon.is-amber { color: #ffb14a; flex-shrink: 0; margin-top: 2px; }
-.brief-icon.is-cyan { color: #5ce1e6; flex-shrink: 0; margin-top: 2px; }
-.brief-icon.is-periwinkle { color: #8f9cff; flex-shrink: 0; margin-top: 2px; }
-
-.student-brief-card strong {
-  display: block;
+  padding: 13px 24px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
   font-size: 10px;
-  letter-spacing: 0.1em;
-  color: #f1f5f9;
-  margin-bottom: 4px;
+  letter-spacing: 0.12em;
 }
 
-.student-brief-card p {
-  margin: 0;
-  font-size: 10.5px;
-  line-height: 1.5;
-  color: #94a3b8;
+.topbar-cell:last-child {
+  border-right: none;
 }
 
-.student-brief-actions {
-  display: flex;
+.topbar-cell.is-right {
   justify-content: flex-end;
 }
 
-.student-launch-btn {
+.topbar-index,
+.topbar-label {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.topbar-value {
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.topbar-live-indicator {
+  width: 6px;
+  height: 6px;
+  background-color: #10b981;
+  display: inline-block;
+}
+
+/* Main Editorial Hero Composition with Generous Negative Space */
+.landing-editorial-MainGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 720px) 1fr;
+  align-items: end;
+  gap: 48px;
+  padding: 64px 48px 56px;
+  flex: 1;
+}
+
+.landing-hero-column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 680px;
+}
+
+.landing-section-kicker {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px 16px;
-  border-radius: 6px;
-  background: rgba(92, 225, 230, 0.16);
-  border: 1px solid rgba(92, 225, 230, 0.5);
-  color: var(--cyan);
+  gap: 10px;
+  margin-bottom: 22px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: #94a3b8;
+}
+
+.landing-section-kicker .kicker-num {
+  color: #f8fafc;
+}
+
+.landing-section-kicker .kicker-sep {
+  color: rgba(255, 255, 255, 0.24);
+}
+
+/* Geometric Clean Display Headline */
+.landing-editorial-headline {
+  margin: 0 0 22px;
+  font-family: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: clamp(36px, 4.6vw, 62px);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  color: #f8fafc;
+}
+
+.landing-editorial-lead {
+  margin: 0 0 38px;
+  max-width: 58ch;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  line-height: 1.68;
+  font-weight: 400;
+  color: #94a3b8;
+}
+
+/* Architectural Dual Call-To-Action Block (Zero Pills, Zero Neon Gradients) */
+.landing-editorial-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(240px, 310px));
+  gap: 16px;
+  width: 100%;
+}
+
+.editorial-cta-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-radius: 2px;
+  text-align: left;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.student-launch-btn:hover {
-  background: rgba(92, 225, 230, 0.28);
-  color: #ffffff;
-  box-shadow: 0 0 18px rgba(92, 225, 230, 0.3);
+.editorial-cta-btn .cta-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
 }
 
-@media (max-width: 860px) {
-  .student-brief-grid {
+.editorial-cta-btn .cta-main-label {
+  font-family: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin-bottom: 8px;
+}
+
+.editorial-cta-btn .cta-tech-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+}
+
+.editorial-cta-btn .cta-arrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  transition: transform 0.18s ease;
+}
+
+/* Primary Planner CTA: High-Contrast Solid Alabaster Surface */
+.editorial-cta-btn.is-primary-planner {
+  background-color: #f8fafc;
+  border: 1px solid #f8fafc;
+  color: #090A0D;
+}
+
+.editorial-cta-btn.is-primary-planner .cta-top-row {
+  color: #475569;
+}
+
+.editorial-cta-btn.is-primary-planner .cta-main-label {
+  color: #090A0D;
+}
+
+.editorial-cta-btn.is-primary-planner .cta-tech-meta {
+  color: #334155;
+}
+
+.editorial-cta-btn.is-primary-planner:hover {
+  background-color: #ffffff;
+  border-color: #ffffff;
+  transform: translateY(-2px);
+}
+
+.editorial-cta-btn.is-primary-planner:hover .cta-arrow {
+  transform: translateX(4px);
+}
+
+/* Secondary Educators & Cadets CTA: Architectural Hairline Surface */
+.editorial-cta-btn.is-secondary-academy {
+  background-color: rgba(9, 10, 13, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #f8fafc;
+  backdrop-filter: blur(8px);
+}
+
+.editorial-cta-btn.is-secondary-academy .cta-top-row {
+  color: #94a3b8;
+}
+
+.editorial-cta-btn.is-secondary-academy .cta-main-label {
+  color: #f8fafc;
+}
+
+.editorial-cta-btn.is-secondary-academy .cta-tech-meta {
+  color: #64748b;
+}
+
+.editorial-cta-btn.is-secondary-academy:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.42);
+  transform: translateY(-2px);
+}
+
+.editorial-cta-btn.is-secondary-academy:hover .cta-arrow {
+  transform: translate(2px, -2px);
+}
+
+/* Right Optical Reference Column */
+.landing-optical-sidebar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+}
+
+.optical-callout-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 16px;
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.optical-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.optical-key {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: #64748b;
+}
+
+.optical-val {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #e2e8f0;
+}
+
+/* Section 3: Clean Horizon & Ephemeris Preview Specimen Dock */
+.landing-ephemeris-dock {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(9, 10, 13, 0.86);
+  backdrop-filter: blur(12px);
+}
+
+.ephemeris-preview-chart-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px 32px 18px 48px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dock-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.dock-title-group {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.dock-index {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: #f8fafc;
+}
+
+.dock-subtitle {
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  color: #64748b;
+}
+
+/* Hairline Site Switcher Tabs */
+.dock-site-tabs {
+  display: inline-flex;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.dock-site-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: transparent;
+  border: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.dock-site-tab:last-child {
+  border-right: none;
+}
+
+.dock-site-tab .tab-code {
+  color: #64748b;
+}
+
+.dock-site-tab:hover {
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dock-site-tab.is-active {
+  background: #f8fafc;
+  color: #090A0D;
+  font-weight: 600;
+}
+
+.dock-site-tab.is-active .tab-code {
+  color: #475569;
+}
+
+/* SVG Horizon Profile Specimen */
+.horizon-specimen-canvas {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.horizon-specimen-svg {
+  width: 100%;
+  height: 68px;
+  display: block;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.horizon-specimen-axis {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: #64748b;
+}
+
+/* Right Ephemeris Telemetry Matrix (2x2 Architectural Hairline Grid) */
+.ephemeris-telemetry-matrix {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.telemetry-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  padding: 18px 24px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.telemetry-cell:nth-child(2n) {
+  border-right: none;
+}
+
+.telemetry-cell:nth-child(n + 3) {
+  border-bottom: none;
+}
+
+.telemetry-label {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: #64748b;
+}
+
+.telemetry-value {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #f8fafc;
+}
+
+.telemetry-value.is-amber {
+  color: #f59e0b;
+}
+
+.telemetry-value.is-sky {
+  color: #38bdf8;
+}
+
+.telemetry-sub {
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+}
+
+@media (max-width: 1080px) {
+  .landing-editorial-topbar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .landing-editorial-MainGrid {
+    grid-template-columns: 1fr;
+    padding: 40px 28px;
+  }
+  .landing-optical-sidebar {
+    justify-content: flex-start;
+  }
+  .landing-ephemeris-dock {
     grid-template-columns: 1fr;
   }
-  .landing-glass-hud-panel {
-    padding: 28px 20px;
+  .ephemeris-preview-chart-col {
+    padding: 20px 28px;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
-  .landing-earthrise-callout {
-    display: none;
+}
+
+@media (max-width: 640px) {
+  .landing-editorial-actions {
+    grid-template-columns: 1fr;
+  }
+  .ephemeris-telemetry-matrix {
+    grid-template-columns: 1fr;
+  }
+  .telemetry-cell {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
 }
