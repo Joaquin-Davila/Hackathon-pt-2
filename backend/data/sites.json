@@ -1,0 +1,63 @@
+[
+  {
+    "id": "shackleton-rim",
+    "name": "Shackleton Rim",
+    "lat": -89.54,
+    "lon": 0.0,
+    "elevation": 4218,
+    "targetRegion": "South Pole Peak",
+    "description": "Ultra-high prominence crater rim receiving up to 86-90% annual illumination with direct DTE line-of-sight.",
+    "markers": [
+      { "name": "Connecting Ridge Path", "x": 0.48, "y": 0.42 },
+      { "name": "Deep Shadow Floor", "x": 0.52, "y": 0.55 }
+    ]
+  },
+  {
+    "id": "connecting-ridge",
+    "name": "Connecting Ridge",
+    "lat": -89.44,
+    "lon": -137.5,
+    "elevation": 4350,
+    "targetRegion": "Shackleton - de Gerlache Saddle",
+    "description": "Strategic narrow ridge linking Shackleton with de Gerlache. Excellent solar window with periodic libration-driven Earth dips.",
+    "markers": [
+      { "name": "Ridge Crest", "x": 0.51, "y": 0.46 }
+    ]
+  },
+  {
+    "id": "malapert-massif",
+    "name": "Malapert Massif",
+    "lat": -85.99,
+    "lon": 2.93,
+    "elevation": 5040,
+    "targetRegion": "Malapert Mountain Crest",
+    "description": "Towering 5,000m lunar mountain providing exceptional continuous Earth visibility and expansive solar horizons.",
+    "markers": [
+      { "name": "Massif Peak", "x": 0.54, "y": 0.38 }
+    ]
+  },
+  {
+    "id": "haworth-rim",
+    "name": "Haworth Crater Rim",
+    "lat": -87.4,
+    "lon": -5.1,
+    "elevation": 2150,
+    "targetRegion": "Permanently Shadowed Region Margin",
+    "description": "Proximity to high-concentration volatile cold traps, bounded by steep undulating crater rim elevations.",
+    "markers": [
+      { "name": "PSR Ingress", "x": 0.46, "y": 0.52 }
+    ]
+  },
+  {
+    "id": "nobile-rim",
+    "name": "Nobile Rim 1",
+    "lat": -85.2,
+    "lon": 37.8,
+    "elevation": 3820,
+    "targetRegion": "VIPER Primary Study Zone",
+    "description": "Accessible rolling terrain with varied thermal conditions and stable direct-to-Earth communication link.",
+    "markers": [
+      { "name": "Landing Zone Alpha", "x": 0.50, "y": 0.48 }
+    ]
+  }
+]

@@ -1,0 +1,713 @@
+/* =========================================================================
+   LUNAR STREET VIEW & HORIZON SIMULATOR
+   High-End Dribbble-Inspired Dark Aesthetic (#090A0D)
+   Zero Heavy UI Boxes · Minimalist Editorial Rules · Monospace Telemetry
+   ========================================================================= */
+
+.lunar-streetview-root {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--ink, #f2f5fa);
+  font-family: Roboto, -apple-system, sans-serif;
+  animation: streetViewFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes streetViewFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 1. Header Toolbar: Mode Switcher & Quick Site Switcher */
+.streetview-top-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--hairline, rgba(255, 255, 255, 0.08));
+}
+
+.streetview-kicker-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.streetview-kicker-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--cyan, #5ce1e6);
+  text-transform: uppercase;
+}
+
+.streetview-kicker-tag .pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cyan, #5ce1e6);
+  box-shadow: 0 0 8px var(--cyan, #5ce1e6);
+  animation: tagPulse 2s infinite ease-in-out;
+}
+
+@keyframes tagPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.streetview-title {
+  margin: 0;
+  font-family: 'Exo 2', sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #fff;
+}
+
+.streetview-site-selector-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.site-pill-btn {
+  padding: 5px 11px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--hairline, rgba(255, 255, 255, 0.08));
+  border-radius: 2px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--mute, #8a94a6);
+  transition: all 0.15s ease;
+}
+
+.site-pill-btn:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.site-pill-btn.is-active {
+  color: var(--cyan, #5ce1e6);
+  border-color: rgba(92, 225, 230, 0.5);
+  background: rgba(92, 225, 230, 0.08);
+}
+
+/* 2. Main 3D Viewport Shell */
+.streetview-viewport-shell {
+  position: relative;
+  width: 100%;
+  height: 620px;
+  min-height: 520px;
+  background: #090a0d;
+  border: 1px solid var(--line, rgba(255, 255, 255, 0.12));
+  border-radius: 4px;
+  overflow: hidden;
+  user-select: none;
+  touch-action: none;
+}
+
+.streetview-viewport-shell.is-fullscreen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  border-radius: 0;
+  border: none;
+}
+
+/* Canvas container */
+.streetview-canvas-mount {
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+
+.streetview-canvas-mount:active {
+  cursor: grabbing;
+}
+
+/* 3. Visor Compass Tape at Top */
+.visor-compass-strip {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.compass-tape-window {
+  width: 320px;
+  height: 38px;
+  overflow: hidden;
+  position: relative;
+  background: rgba(9, 10, 13, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  backdrop-filter: blur(8px);
+  mask-image: linear-gradient(to right, transparent, #000 20%, #000 80%, transparent);
+}
+
+.compass-tape-inner {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  transition: transform 0.05s linear;
+}
+
+.compass-tick {
+  width: 36px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  padding-bottom: 4px;
+}
+
+.compass-tick-mark {
+  width: 1px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.compass-tick.is-major .compass-tick-mark {
+  height: 10px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.compass-tick-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--mute, #8a94a6);
+  margin-top: 2px;
+}
+
+.compass-tick.is-cardinal .compass-tick-label {
+  color: var(--cyan, #5ce1e6);
+  font-weight: 700;
+}
+
+.compass-center-indicator {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--cyan, #5ce1e6);
+  box-shadow: 0 0 6px var(--cyan, #5ce1e6);
+  z-index: 2;
+}
+
+.compass-bearing-badge {
+  margin-top: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: #fff;
+  background: rgba(9, 10, 13, 0.8);
+  padding: 2px 10px;
+  border-radius: 2px;
+  border: 1px solid var(--hairline, rgba(255, 255, 255, 0.08));
+}
+
+.compass-bearing-badge span b {
+  color: var(--cyan, #5ce1e6);
+}
+
+/* 3b. Smart Guidance & Obstruction Alerts (Unboxed Visor Badges) */
+.visor-alerts-container {
+  position: absolute;
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: min(92%, 780px);
+  pointer-events: none;
+}
+
+.visor-smart-warning-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  background: rgba(255, 59, 48, 0.16);
+  border: 1px solid rgba(255, 59, 48, 0.5);
+  border-radius: 2px;
+  backdrop-filter: blur(8px);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #ff6b6b;
+  text-shadow: 0 0 8px rgba(255, 59, 48, 0.6);
+  pointer-events: auto;
+  animation: visorWarnPulse 2s infinite alternate ease-in-out;
+}
+
+@keyframes visorWarnPulse {
+  from { opacity: 0.85; transform: scale(0.99); }
+  to { opacity: 1; transform: scale(1.01); }
+}
+
+.visor-smart-recommendation-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px;
+  background: rgba(9, 10, 13, 0.85);
+  border: 1px solid rgba(92, 225, 230, 0.45);
+  border-radius: 2px;
+  backdrop-filter: blur(10px);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: #fff;
+  pointer-events: auto;
+  box-shadow: 0 0 16px rgba(92, 225, 230, 0.15);
+}
+
+.visor-smart-recommendation-pill .rec-sparkle-icon {
+  color: var(--cyan, #5ce1e6);
+  flex-shrink: 0;
+}
+
+.visor-smart-recommendation-pill .rec-text {
+  color: #dbe4ee;
+}
+
+.visor-smart-recommendation-pill .rec-adopt-btn {
+  padding: 2px 8px;
+  background: var(--cyan, #5ce1e6);
+  color: #090a0d;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  border-radius: 2px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.visor-smart-recommendation-pill .rec-adopt-btn:hover {
+  background: #8bf4f8;
+  transform: scale(1.05);
+}
+
+/* 4. Center Reticle / Crosshair */
+.visor-center-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  pointer-events: none;
+  opacity: 0.45;
+  transition: opacity 0.2s ease;
+}
+
+.crosshair-line {
+  position: absolute;
+  background: #fff;
+}
+
+.crosshair-line.h-left { top: 15px; left: 0; width: 10px; height: 1px; }
+.crosshair-line.h-right { top: 15px; right: 0; width: 10px; height: 1px; }
+.crosshair-line.v-top { top: 0; left: 15px; width: 1px; height: 10px; }
+.crosshair-line.v-bottom { bottom: 0; left: 15px; width: 1px; height: 10px; }
+
+/* 5. Floating Projected Celestial Reticles in 3D Sky */
+.celestial-reticle-box {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  cursor: pointer;
+  z-index: 12;
+  transition: transform 0.08s linear;
+}
+
+.reticle-bracket {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(9, 10, 13, 0.78);
+  border: 1px solid var(--line, rgba(255, 255, 255, 0.2));
+  border-radius: 2px;
+  backdrop-filter: blur(6px);
+  white-space: nowrap;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: #fff;
+  transition: all 0.2s ease;
+}
+
+.celestial-reticle-box:hover .reticle-bracket {
+  background: rgba(15, 20, 28, 0.95);
+  border-color: var(--cyan, #5ce1e6);
+  box-shadow: 0 0 12px rgba(92, 225, 230, 0.35);
+  transform: scale(1.04);
+}
+
+.reticle-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+}
+
+.reticle-icon.sun { color: #ffb14a; }
+.reticle-icon.earth { color: #5ce1e6; }
+
+.reticle-tag {
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.reticle-metrics {
+  color: var(--mute, #8a94a6);
+}
+
+.reticle-margin-pill {
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+.reticle-margin-pill.clear {
+  color: #4cd964;
+  background: rgba(76, 217, 100, 0.12);
+  border: 1px solid rgba(76, 217, 100, 0.3);
+}
+
+.reticle-margin-pill.occluded {
+  color: #ff3b30;
+  background: rgba(255, 59, 48, 0.12);
+  border: 1px solid rgba(255, 59, 48, 0.3);
+}
+
+/* Off-screen guidance arrows */
+.offscreen-tracker-arrow {
+  position: absolute;
+  z-index: 11;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  background: rgba(9, 10, 13, 0.85);
+  border: 1px solid var(--hairline, rgba(255, 255, 255, 0.15));
+  border-radius: 2px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--mute, #8a94a6);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.offscreen-tracker-arrow:hover {
+  color: #fff;
+  border-color: var(--cyan, #5ce1e6);
+}
+
+/* 6. Viewport Quick Overlay Controls (Bottom Left / Bottom Right) */
+.viewport-bottom-controls {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.viewport-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: auto;
+}
+
+.vp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(9, 10, 13, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--mute, #8a94a6);
+  backdrop-filter: blur(8px);
+  transition: all 0.15s ease;
+}
+
+.vp-btn:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(20, 25, 35, 0.9);
+}
+
+.vp-btn.is-active {
+  color: var(--cyan, #5ce1e6);
+  border-color: var(--cyan, #5ce1e6);
+  background: rgba(92, 225, 230, 0.12);
+}
+
+/* 7. Unboxed Monospace Telemetry Grid (Zero Heavy UI) */
+.streetview-telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 18px 28px;
+  padding: 20px 0;
+  border-top: 1px solid var(--hairline, rgba(255, 255, 255, 0.08));
+  border-bottom: 1px solid var(--hairline, rgba(255, 255, 255, 0.08));
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.telemetry-channel-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.telemetry-channel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.channel-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #fff;
+}
+
+.channel-id-badge {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--mute, #8a94a6);
+}
+
+.telemetry-stat-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.stat-label {
+  color: var(--mute, #8a94a6);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.stat-val {
+  color: #fff;
+  font-weight: 500;
+  text-align: right;
+}
+
+.stat-val.highlight {
+  color: var(--cyan, #5ce1e6);
+  font-weight: 700;
+}
+
+.stat-val.amber {
+  color: var(--amber, #ffb14a);
+}
+
+.stat-val.positive {
+  color: #4cd964;
+}
+
+.stat-val.negative {
+  color: #ff3b30;
+}
+
+.stat-unit {
+  font-size: 9px;
+  color: var(--dim, #5d6678);
+  margin-left: 3px;
+}
+
+/* 8. Interactive Timeline Scrubber & Speed Controls */
+.streetview-timeline-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 20px;
+  background: rgba(9, 10, 13, 0.6);
+  border: 1px solid var(--hairline, rgba(255, 255, 255, 0.08));
+  border-radius: 3px;
+}
+
+.timeline-ctrl-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.timeline-playback-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.playback-btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--hairline, rgba(255, 255, 255, 0.1));
+  color: #fff;
+  transition: all 0.15s ease;
+}
+
+.playback-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.playback-speed-select {
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--hairline, rgba(255, 255, 255, 0.08));
+  border-radius: 2px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--mute, #8a94a6);
+}
+
+.timeline-preset-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.preset-pill {
+  padding: 4px 9px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--mute, #8a94a6);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--hairline, rgba(255, 255, 255, 0.08));
+  border-radius: 2px;
+  transition: all 0.15s ease;
+}
+
+.preset-pill:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.preset-pill.is-active {
+  color: var(--cyan, #5ce1e6);
+  border-color: rgba(92, 225, 230, 0.45);
+  background: rgba(92, 225, 230, 0.08);
+}
+
+/* Scrub Range Slider */
+.timeline-slider-track {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  outline: none;
+  cursor: ew-resize;
+}
+
+.timeline-slider-track::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--cyan, #5ce1e6);
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(92, 225, 230, 0.7);
+  transition: transform 0.1s ease;
+}
+
+.timeline-slider-track::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.timeline-slider-track::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--cyan, #5ce1e6);
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(92, 225, 230, 0.7);
+  border: none;
+}
+
+.timeline-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--mute, #8a94a6);
+}
+
+.timeline-footer-row b {
+  color: #fff;
+}

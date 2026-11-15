@@ -1,0 +1,1 @@
+export default function SolarWindow() { return <div className="overview-item"><span className="overview-label">SOLAR WINDOW</span><b className="pending">AWAITING DATA</b><small>HORIZON ANALYSIS PENDING</small></div>; }

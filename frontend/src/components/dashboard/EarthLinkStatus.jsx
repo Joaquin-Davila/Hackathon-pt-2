@@ -1,0 +1,1 @@
+export default function EarthLinkStatus() { return <div className="overview-item"><span className="overview-label">EARTH LINK</span><b className="pending">AWAITING DATA</b><small>VISIBILITY ANALYSIS PENDING</small></div>; }
