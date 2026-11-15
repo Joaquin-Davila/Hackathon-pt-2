@@ -77,3 +77,9 @@ cd frontend
 npm run build
 npm run preview
 ```
+
+## Despliegue en Vercel / Deploy on Vercel
+
+Importa el repositorio en Vercel y deja el Root Directory en la raíz (no elijas `frontend`). `vercel.json` declara dos servicios: `frontend` (Vite) y `backend` (`backend/server.js`), y envía `/api/*` al backend y todo lo demás al frontend. No hace falta configurar nada más ni variables de entorno.
+
+Import the repository in Vercel and keep the Root Directory at the repository root (do not pick `frontend`). `vercel.json` declares two services: `frontend` (Vite) and `backend` (`backend/server.js`), routing `/api/*` to the backend and everything else to the frontend. No extra settings or environment variables are needed.
