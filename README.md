@@ -40,15 +40,40 @@ npm run preview
 
 # LuNav
 
-Lunar navigation project structured as two independent applications:
+Lunar navigation project organized as two independent applications:
 
 - `frontend/`: React + Vite interface.
-- `backend/`: Lightweight HTTP API, implemented in Node.js with zero external dependencies.
+- `backend/`: lightweight HTTP API, implemented with Node.js and no external dependencies.
 
-## Running in Development
+## Run in development
 
 Start the API in one terminal:
 
 ```bash
 cd backend
 npm run dev
+```
+
+Start the interface in another terminal:
+
+```bash
+cd frontend
+npm run dev
+```
+
+Vite proxies `/api/*` requests to `http://localhost:3001`. The interface queries `/api/sites` first and falls back to `/data/sites.json` if the API is unavailable.
+
+## API
+
+- `GET /api/health`: service status.
+- `GET /api/sites`: sites defined in `backend/data/sites.json`.
+
+The current site and horizon data are still pending; the frontend keeps its default names while no coordinates exist.
+
+## Frontend production build
+
+```bash
+cd frontend
+npm run build
+npm run preview
+```
