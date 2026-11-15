@@ -37,3 +37,18 @@ cd frontend
 npm run build
 npm run preview
 ```
+
+# LuNav
+
+Lunar navigation project structured as two independent applications:
+
+- `frontend/`: React + Vite interface.
+- `backend/`: Lightweight HTTP API, implemented in Node.js with zero external dependencies.
+
+## Running in Development
+
+Start the API in one terminal:
+
+```bash
+cd backend
+npm run dev
